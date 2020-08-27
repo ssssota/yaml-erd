@@ -1,0 +1,16 @@
+schema:
+  Compnay:
+    struct:
+      id: int
+      name: string
+  Employee:
+    struct:
+      id: int
+      name: string
+      companyId: int
+      skillLevel:
+        javascript: int
+        csharp: int
+        java: int
+    relations:
+      - "(companyId) -> Company(id)"
