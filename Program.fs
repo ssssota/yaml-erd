@@ -16,13 +16,13 @@ module DBType =
     type Relation = {Src: string; Dist: string * string}
 
     [<Struct>]
-    type Table = {
+    type Entity = {
         Name: string
         Struct: (Key * Struct) list
         Relations: Relation list
     }
 
-    type Schema = Table list
+    type Schema = Entity list
 
     module Parse =
         let rec structFromYamlNode (node: YamlNode): Struct =
@@ -49,7 +49,7 @@ module DBType =
             Dist = m.Groups.["distEntity"].Value, m.Groups.["distField"].Value
           }
 
-        let tableFromYamlNode (name: string) (node: YamlNode): Table =
+        let entityFromYamlNode (name: string) (node: YamlNode): Entity =
             let node : YamlMappingNode = downcast node
             let relations =
               if node.Children.ContainsKey(YamlScalarNode("relations")) then
@@ -68,7 +68,7 @@ module DBType =
             let schemaYaml : YamlMappingNode = downcast mapping.[YamlScalarNode("schema")]
             List.map (fun key ->
               let key : YamlScalarNode = downcast box key
-              tableFromYamlNode key.Value schemaYaml.[key]
+              entityFromYamlNode key.Value schemaYaml.[key]
             ) <| Seq.toList schemaYaml.Children.Keys
 
         let schemaFromFile (filename: string) =
@@ -92,14 +92,14 @@ module DBType =
 
         let makeValidLabel (str:string) = str.Replace(".", "__").Replace("-", "__")
 
-        let tableToNode (table: Table): Node = {
-          Name = table.Name
-          Struct = table.Struct
+        let entityToNode (entity: Entity): Node = {
+          Name = entity.Name
+          Struct = entity.Struct
         }
 
         let schemaToGraphviz (schema: Schema): Graphviz =
-            let nodes = List.map tableToNode schema
-            let edges: Edge list = List.fold (fun acc (table:Table) -> List.fold (fun acc (relation:Relation) -> {Src = table.Name, relation.Src; Dist = relation.Dist } :: acc) acc table.Relations) [] schema in
+            let nodes = List.map entityToNode schema
+            let edges: Edge list = List.fold (fun acc (entity:Entity) -> List.fold (fun acc (relation:Relation) -> {Src = entity.Name, relation.Src; Dist = relation.Dist } :: acc) acc entity.Relations) [] schema in
             {
               Nodes = nodes
               Edges = edges
@@ -107,7 +107,7 @@ module DBType =
 
         let recordToString =
           let rec aux indent prefix record =
-            List.map (fun (key: string, strct) ->
+            List.map (fun (key, strct) ->
               let prefix = makeValidLabel <| if prefix = "" then key else prefix + "__" + key
               match strct with
               | Scalar v -> String.Format("<{1}>{0}{2}: {3}", indent, prefix, key, v)
