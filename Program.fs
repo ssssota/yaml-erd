@@ -125,7 +125,7 @@ digraph Schema {{
   node [
     shape = "record"
     fontname = "Noto Sans Mono"
-    width = 6
+    width = 3
   ]
 
 {0}
