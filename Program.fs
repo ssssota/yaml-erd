@@ -8,16 +8,16 @@ open YamlDotNet.Serialization
 open YamlDotNet.Serialization.NamingConventions
 
 module DBType =
-    type Key = String
+    type Key = string
     type Struct =
-        | Scalar of String
+        | Scalar of string
         | Record of (Key * Struct) list
 
-    type Relation = String * String
+    type Relation = {Src: string; Dist: string * string}
 
     [<Struct>]
     type Table = {
-        Name: String
+        Name: string
         Struct: (Key * Struct) list
         Relations: Relation list
     }
@@ -42,9 +42,12 @@ module DBType =
 
         let relationFromYamlNode (node: YamlNode): Relation =
           let relationYaml : YamlScalarNode = downcast node
-          let regex = Regex("^\\((?<from>.+?)\\) -> (?<to>.+?)$")
+          let regex = Regex("^\\((?<src>.+?)\\) -> (?<distEntity>.+?)\\((?<distField>.+?)\\)$")
           let m = regex.Match(relationYaml.Value)
-          Relation(m.Groups.["from"].Value, m.Groups.["to"].Value)
+          {
+            Src =  m.Groups.["src"].Value
+            Dist = m.Groups.["distEntity"].Value, m.Groups.["distField"].Value
+          }
 
         let tableFromYamlNode (name: string) (node: YamlNode): Table =
             let node : YamlMappingNode = downcast node
@@ -79,13 +82,15 @@ module DBType =
           Struct: (Key * Struct) list
         }
         type Edge = {
-          From: string
-          To: string
+          Src: string * string
+          Dist: string * string
         }
         type Graphviz = {
           Nodes: Node list
           Edges: Edge list
         }
+
+        let makeValidLabel (str:string) = str.Replace(".", "__").Replace("-", "__")
 
         let tableToNode (table: Table): Node = {
           Name = table.Name
@@ -94,27 +99,29 @@ module DBType =
 
         let schemaToGraphviz (schema: Schema): Graphviz =
             let nodes = List.map tableToNode schema
-            let edges = [] // TODO
+            let edges: Edge list = List.fold (fun acc (table:Table) -> List.fold (fun acc (relation:Relation) -> {Src = table.Name, relation.Src; Dist = relation.Dist } :: acc) acc table.Relations) [] schema in
             {
               Nodes = nodes
               Edges = edges
             }
 
         let recordToString =
-          let rec aux indent record =
-            List.map (fun (key, strct) ->
+          let rec aux indent prefix record =
+            List.map (fun (key: string, strct) ->
+              let prefix = makeValidLabel <| if prefix = "" then key else prefix + "__" + key
               match strct with
-              | Scalar v -> indent + key + ": " + v
-              | Record fields -> indent + key + ":\l |" + (aux (indent + "　") fields)
+              | Scalar v -> String.Format("<{1}>{0}{2}: {3}", indent, prefix, key, v)
+              | Record fields -> String.Format("<{1}>{0}{2}:\l|{3}", indent, prefix, key, aux (indent + "　") prefix fields)
             ) record |> String.concat "\l | "
-          aux ""
+          aux "" ""
 
-        let nodeToString (node: Node): String =
-          String.Format("""{0} [label="{0} | {1}\l"]""", node.Name, recordToString node.Struct)
+        let nodeToString (node: Node): string =
+          String.Format("""{0} [label="<{0}>{0} | {1}\l"]""", makeValidLabel node.Name, recordToString node.Struct)
 
         let graphvizToString (graphviz: Graphviz): string =
           let nodes = List.map nodeToString graphviz.Nodes |> String.concat "\n"
-          let edges = List.map (fun edge -> edge.From + " -> " + edge.To) graphviz.Edges |> String.concat "\n"
+          let edgeToString = fun edge -> String.Format("  {0}:{1} -> {2}:{3}", makeValidLabel <| fst edge.Src, makeValidLabel <| snd edge.Src, makeValidLabel <| fst edge.Dist, makeValidLabel <| snd edge.Dist)
+          let edges = List.map edgeToString graphviz.Edges |> String.concat "\n"
           String.Format("""
 digraph Schema {{
   rankdir=LR
@@ -141,5 +148,4 @@ digraph Schema {{
           sw.Close ()
 
 let schema = DBType.Parse.schemaFromFile @"./sample.yaml"
-printfn "input: %A" schema
 DBType.Print.schemaToFile @"./output.dot" schema

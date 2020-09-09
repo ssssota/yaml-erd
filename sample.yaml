@@ -12,5 +12,22 @@ schema:
         javascript: int
         csharp: int
         java: int
+        web-framework:
+          yesod: int
+          actix-web: int
     relations:
       - "(companyId) -> Company(id)"
+  Task:
+    struct:
+      id: int
+      name: string
+      staffId: int
+      hoge: int
+      fuga:
+        foo: int
+        bar: int
+    relations:
+      - "(staffId) -> Employee(id)"
+      - "(hoge) -> Employee(skillLevel.csharp)"
+      - "(fuga) -> Employee(skillLevel.web-framework)"
+      - "(fuga.foo) -> Employee(skillLevel.web-framework.yesod)"
