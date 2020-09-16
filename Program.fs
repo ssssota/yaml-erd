@@ -25,58 +25,112 @@ module DBType =
     type Schema = Entity list
 
     module Parse =
-        let rec structFromYamlNode (node: YamlNode): Struct =
+        type OkValue<'a> = {data: 'a; warnings: string list}
+        type ErrorValue = string list
+        type ParseResult<'a> = Result<OkValue<'a>, ErrorValue>
+
+        let parseError (node: YamlNode) msg =
+          Error [
+            String.Format(
+              "parse error({0}:{1}-{2}:{3}): {4}",
+              node.Start.Line,
+              node.Start.Column,
+              node.End.Line,
+              node.End.Column,
+              msg
+            )
+          ]
+
+        let rec structFromYamlNode (node: YamlNode): ParseResult<Struct> =
+            match node with
+            | :? YamlMappingNode as recordYaml -> recordFromYamlNode recordYaml |> Result.map (fun {data = data; warnings = warnings} -> {data = Record data; warnings = warnings})
+            | :? YamlScalarNode as scalarYaml -> scalarFromYamlNode scalarYaml |> Result.map (fun {data = data; warnings = warnings} -> { data = Scalar data; warnings = warnings})
+            | _ -> parseError node (String.Format("{0} should be mapping node or scalar node", node.ToString()))
+
+        and recordFromYamlNode (node: YamlNode): ParseResult<(Key * Struct) list> =
             match node with
             | :? YamlMappingNode as recordYaml ->
-                Record (List.map (fun key ->
-                  let key : YamlScalarNode = downcast box key
-                  (key.Value, structFromYamlNode <| recordYaml.Children.[key]))
-                <| Seq.toList recordYaml.Children.Keys)
-            | :? YamlScalarNode as scalarYaml -> Scalar scalarYaml.Value
-            | _ -> failwith "unreachable!!"
+                Seq.fold (fun acc key ->
+                  let key: YamlScalarNode = downcast box key
+                  match acc, structFromYamlNode recordYaml.Children.[key] with
+                  | Ok {data=data1; warnings=warnings1}, Ok {data=data2; warnings=warnings2} ->
+                      Ok {data = (key.ToString(), data2) :: data1; warnings = warnings1 @ warnings2}
+                  | Error err1, Error err2 -> Error (err1 @ err2)
+                  | _, Error err | Error err, _ -> Error err
+                ) (Ok {data = []; warnings = []}) (Seq.rev recordYaml.Children.Keys)
+            | _ -> parseError node (String.Format("{0} should be mapping node", node.ToString()))
 
-        let recordFromYamlNode (node: YamlNode): (Key * Struct) list =
-            match structFromYamlNode node with
-            | Record fields -> fields
-            | _ -> failwith "unreachable!!"
+        and scalarFromYamlNode (node: YamlNode): ParseResult<string> =
+            match node with
+            | :? YamlScalarNode as scalarYaml -> Ok { data = scalarYaml.Value; warnings = []}
+            | _ -> Error [String.Format("parse error({0}:{1}-{2}:{3}):{4} should be scalar node", node.Start.Line, node.Start.Column, node.End.Line, node.End.Column, node.ToString())]
 
-        let relationFromYamlNode (node: YamlNode): Relation =
+        let relationFromYamlNode (node: YamlNode): ParseResult<Relation> =
           let relationYaml : YamlScalarNode = downcast node
           let regex = Regex("^\\((?<src>.+?)\\) -> (?<distEntity>.+?)\\((?<distField>.+?)\\)$")
           let m = regex.Match(relationYaml.Value)
-          {
-            Src =  m.Groups.["src"].Value
-            Dist = m.Groups.["distEntity"].Value, m.Groups.["distField"].Value
+          Ok {
+            data = {
+              Src =  m.Groups.["src"].Value
+              Dist = m.Groups.["distEntity"].Value, m.Groups.["distField"].Value
+            };
+            warnings = []
           }
 
-        let entityFromYamlNode (name: string) (node: YamlNode): Entity =
+        let entityFromYamlNode (name: string) (node: YamlNode): ParseResult<Entity> =
             let node : YamlMappingNode = downcast node
             let relations =
               if node.Children.ContainsKey(YamlScalarNode("relations")) then
                 let relationsYaml : YamlSequenceNode = downcast node.[YamlScalarNode("relations")]
-                List.map relationFromYamlNode (List.ofSeq relationsYaml.Children)
+                Seq.fold
+                    (fun (acc:ParseResult<Relation list>) (x:YamlNode) ->
+                        let relation = relationFromYamlNode x
+                        match acc, relation with
+                        | Ok {data = rs; warnings = warnings1}, Ok {data=r; warnings=warnings2} ->
+                          Ok {
+                            data = r :: rs;
+                            warnings = warnings1 @ warnings2
+                          }
+                        | Error err1, Error err2 -> Error (err1 @ err2)
+                        | _, Error err | Error err, _ -> Error err
+                    )
+                    (Ok {data = []; warnings = []})
+                    relationsYaml.Children
               else
-                []
-            {
-                Name = name
-                Struct = recordFromYamlNode node.[YamlScalarNode("struct")]
-                Relations = relations
-            }
+                Ok {data = []; warnings = []}
+            let record = recordFromYamlNode node.[YamlScalarNode("struct")]
+            match relations, record with
+            | Ok {data = rs; warnings = warnings1}, Ok {data = strct; warnings = warnings2} ->
+                Ok {
+                  data = {
+                    Name = name
+                    Struct = strct
+                    Relations = rs
+                  }
+                  warnings = warnings1 @ warnings2
+                }
+            | Error err1, Error err2 -> Error (err1 @ err2)
+            | _, Error err | Error err, _ -> Error err
 
-        let schemaFromYamlNode (node: YamlNode): Schema =
+        let schemaFromYamlNode (node: YamlNode): ParseResult<Schema> =
             let mapping : YamlMappingNode = downcast node
             let schemaYaml : YamlMappingNode = downcast mapping.[YamlScalarNode("schema")]
-            List.map (fun key ->
-              let key : YamlScalarNode = downcast box key
-              entityFromYamlNode key.Value schemaYaml.[key]
-            ) <| Seq.toList schemaYaml.Children.Keys
+            Seq.fold (fun acc key ->
+                let key : YamlScalarNode = downcast box key
+                let entity = entityFromYamlNode key.Value schemaYaml.[key]
+                match acc, entity with
+                | Ok { data = es; warnings = warnings1 }, Ok { data = e; warnings = warnings2 } ->
+                    Ok { data = e :: es; warnings = warnings1 @ warnings2 }
+                | Error err1, Error err2 -> Error (err1 @ err2)
+                | Error err, _ | _, Error err -> Error err
+            ) (Ok {data = []; warnings = []}) schemaYaml.Children.Keys
 
         let schemaFromFile (filename: string) =
           let yaml = YamlStream()
           yaml.Load(new StreamReader(filename, Encoding.UTF8))
           schemaFromYamlNode(yaml.Documents.[0].RootNode)
 
-    module Print =
+    module Print = 
         type Node = {
           Name: string
           Struct: (Key * Struct) list
@@ -116,7 +170,7 @@ module DBType =
           aux "" ""
 
         let nodeToString (node: Node): string =
-          String.Format("""{0} [label="<{0}>{0} | {1}\l"]""", makeValidLabel node.Name, recordToString node.Struct)
+          String.Format("""  {0} [label="<{0}>{0} | {1}\l"]""", makeValidLabel node.Name, recordToString node.Struct)
 
         let graphvizToString (graphviz: Graphviz): string =
           let nodes = List.map nodeToString graphviz.Nodes |> String.concat "\n"
@@ -147,5 +201,9 @@ digraph Schema {{
           sw.Write(content)
           sw.Close ()
 
-let schema = DBType.Parse.schemaFromFile @"./sample.yaml"
-DBType.Print.schemaToFile @"./output.dot" schema
+match DBType.Parse.schemaFromFile @"./sample.yaml" with
+| Ok { data = schema; warnings = warnings } ->
+    List.iter (fun warning -> Printf.eprintfn "%s" warning) warnings;
+    DBType.Print.schemaToFile @"./output.dot" schema
+| Error errs ->
+  List.iter (fun err -> Printf.eprintfn "%s" err) errs
