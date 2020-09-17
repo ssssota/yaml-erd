@@ -27,6 +27,6 @@ schema:
         foo: int
         bar: int
     relations:
-      - "(staffId) ||--|| Employee(id)"
+      - "(staffId) ||-- Employee(id)"
       - "(hoge) }o--o| Employee(skillLevel.csharp)"
       - "(fuga.foo) }|--o{ Employee(skillLevel.web-framework.yesod)"

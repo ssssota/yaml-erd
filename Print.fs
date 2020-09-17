@@ -56,6 +56,7 @@ let private printNode (node: Node): string =
 
 let private printRelationKind =
     function
+    | RelationKind.None -> "none"
     | RelationKind.One -> "teetee"
     | RelationKind.ZeroOrOne -> "teeodot"
     | RelationKind.ZeroOrMore -> "icurveodot"

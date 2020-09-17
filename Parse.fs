@@ -45,6 +45,7 @@ and private parseScalar (node: YamlNode): Result<string> =
 
 let private parseRelationKind (node: YamlNode) (isLeft: bool) (str: string): Result<RelationKind> =
     match isLeft, str with
+    | _, "" -> Result.mkOk RelationKind.None
     | _, "||" -> Result.mkOk RelationKind.One
     | true, "|o"
     | false, "o|" -> Result.mkOk RelationKind.ZeroOrOne
@@ -68,7 +69,7 @@ let private parseRelation (node: YamlNode): Result<Relation> =
     |> Result.bind (fun relationNode ->
         let regex =
             Regex
-                ("^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) (?<kindLeft>.+?)--(?<kindRight>.+?) (?<distEntity>.+?)\\((?<distField>.+?)\\)$")
+                ("^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) (?<kindLeft>.*?)--(?<kindRight>.*?) (?<distEntity>.+?)\\((?<distField>.+?)\\)$")
 
         let m = regex.Match(relationNode.Value)
         if m.Success then

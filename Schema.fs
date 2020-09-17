@@ -7,6 +7,7 @@ type Struct =
     | Record of (Key * Struct) list
 
 type RelationKind =
+    | None
     | One
     | ZeroOrOne
     | ZeroOrMore
