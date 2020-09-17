@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Util.fs" />
+    <Compile Include="Schema.fs" />
+    <Compile Include="Parse.fs" />
+    <Compile Include="Print.fs" />
+    <Compile Include="Validation.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
