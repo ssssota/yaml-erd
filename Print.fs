@@ -5,25 +5,25 @@ open System.IO
 
 open Schema
 
-type Node =
+type private Node =
     { Name: string
       Struct: (Key * Struct) list }
 
-type Edge =
+type private Edge =
     { Src: (string * string) list
       Dist: string * string
       Kind: RelationKind * RelationKind }
 
-type Graphviz = { Nodes: Node list; Edges: Edge list }
+type private Graphviz = { Nodes: Node list; Edges: Edge list }
 
-let makeValidLabel (str: string) =
+let private makeValidLabel (str: string) =
     str.Replace(".", "__").Replace("-", "__")
 
-let entityToNode (entity: Entity): Node =
+let private entityToNode (entity: Entity): Node =
     { Name = entity.Name
       Struct = entity.Struct }
 
-let schemaToGraphviz (schema: Schema.T): Graphviz =
+let private schemaToGraphviz (schema: Schema.T): Graphviz =
     let nodes = List.map entityToNode schema
 
     let edges =
@@ -36,7 +36,7 @@ let schemaToGraphviz (schema: Schema.T): Graphviz =
 
     { Nodes = nodes; Edges = edges }
 
-let recordToString =
+let private printRecord =
     let rec aux indent prefix record =
         List.map (fun (key, strct) ->
             let prefix =
@@ -51,21 +51,21 @@ let recordToString =
 
     aux "" ""
 
-let nodeToString (node: Node): string =
-    String.Format("""  {0} [label="<{0}>{0} | {1}\l"]""", makeValidLabel node.Name, recordToString node.Struct)
+let private printNode (node: Node): string =
+    String.Format("""  {0} [label="<{0}>{0} | {1}\l"]""", makeValidLabel node.Name, printRecord node.Struct)
 
-let relationKindToString kind =
-    match kind with
+let private printRelationKind =
+    function
     | RelationKind.One -> "teetee"
     | RelationKind.ZeroOrOne -> "teeodot"
     | RelationKind.ZeroOrMore -> "icurveodot"
     | RelationKind.OneOrMore -> "icurvetee"
 
-let mutable edgeInterCount = 0
+let mutable private edgeInterCount = 0
 
-let edgeToString edge =
-    let arrowhead = relationKindToString <| snd edge.Kind
-    let arrowtail = relationKindToString <| fst edge.Kind
+let private printEdge edge =
+    let arrowhead = printRelationKind <| snd edge.Kind
+    let arrowtail = printRelationKind <| fst edge.Kind
     if edge.Src.Length = 1 then
         let src = edge.Src.[0]
         [ String.Format
@@ -103,14 +103,14 @@ let edgeToString edge =
 
         edges, [ interNodes ]
 
-let graphvizToString (graphviz: Graphviz): string =
+let private printGraphviz (graphviz: Graphviz): string =
     let nodes =
-        List.map nodeToString graphviz.Nodes
+        List.map printNode graphviz.Nodes
         |> String.concat "\n"
 
     let edges, interNodes =
         List.fold (fun (accEdges, accInterNodes) edge ->
-            let (edges, interNodes) = edgeToString edge
+            let edges, interNodes = printEdge edge
             (edges @ accEdges, interNodes @ accInterNodes)) ([], []) graphviz.Edges
 
     String.Format
@@ -138,8 +138,7 @@ digraph Schema {{
          edges |> String.concat "\n")
 
 let schemaToFile (filename: string) (schema: Schema.T) =
-    let content =
-        schemaToGraphviz schema |> graphvizToString
+    let content = schemaToGraphviz schema |> printGraphviz
 
     let sw = new StreamWriter(filename)
     sw.Write(content)

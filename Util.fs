@@ -26,3 +26,32 @@ let errorToConsoleString e =
 
 type OkValue<'a> = { Data: 'a; Warnings: Warning list }
 type Result<'a> = Result<OkValue<'a>, ErrorValue list>
+
+module Result =
+    let mkOk x = Ok { Data = x; Warnings = [] }
+
+    let bind f =
+        function
+        | Ok { Data = data; Warnings = warnings1 } ->
+            match f data with
+            | Ok { Data = data; Warnings = warnings2 } ->
+                Ok
+                    { Data = data
+                      Warnings = warnings1 @ warnings2 }
+            | Error err -> Error err
+        | Error err -> Error err
+
+    let mapOk f =
+        function
+        | Ok { Data = data; Warnings = warnings } -> Ok { Data = f data; Warnings = warnings }
+        | Error err -> Error err
+
+    let merge f r1 r2 =
+        match r1, r2 with
+        | Ok { Data = data1; Warnings = warnings1 }, Ok { Data = data2; Warnings = warnings2 } ->
+            Ok
+                { Data = f data1 data2
+                  Warnings = warnings1 @ warnings2 }
+        | Error err1, Error err2 -> Error <| err1 @ err2
+        | _, Error err
+        | Error err, _ -> Error err
