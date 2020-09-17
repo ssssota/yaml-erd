@@ -12,7 +12,17 @@ type Struct =
   | Scalar of string
   | Record of (Key * Struct) list
 
-type Relation = {Src: string list; Dist: string * string}
+type RelationKind =
+  | One
+  | ZeroOrOne
+  | ZeroOrMore
+  | OneOrMore
+
+type Relation = {
+  Src: string list
+  Dist: string * string
+  Kind: RelationKind * RelationKind
+}
 
 [<Struct>]
 type Entity = {
@@ -89,20 +99,35 @@ module Parse =
     | :? YamlScalarNode as scalarYaml -> Ok { Data = scalarYaml.Value; Warnings = [] }
     | _ -> parseError node (String.Format("{0} should be scalar node", node.ToString()))
 
+  let relationKindFromYamlNode (node: YamlNode) (isLeft: bool) (str: string): Result<RelationKind> =
+    match isLeft, str with
+    | _, "||" -> Ok { Data = RelationKind.One; Warnings = [] }
+    | true, "|o" | false, "o|" -> Ok { Data = RelationKind.ZeroOrOne; Warnings = [] }
+    | true, "}o" | false, "o{" -> Ok { Data = RelationKind.ZeroOrMore; Warnings = [] }
+    | true, "}|" | false, "|{" -> Ok { Data = RelationKind.OneOrMore; Warnings = []}
+    | _, _ -> parseError node (String.Format(""))
+
   let relationFromYamlNode (node: YamlNode): Result<Relation> =
     let relationYaml : YamlScalarNode = downcast node
-    let regex = Regex("^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) -> (?<distEntity>.+?)\\((?<distField>.+?)\\)$")
+    let regex = Regex("^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) (?<kindLeft>.+?)--(?<kindRight>.+?) (?<distEntity>.+?)\\((?<distField>.+?)\\)$")
     let m = regex.Match(relationYaml.Value)
     if m.Success then
       let srcHead = m.Groups.["src"].Value
       let srcTails = Seq.map (fun (capture:Capture) -> capture.Value) m.Groups.["srcTail"].Captures |> Seq.toList
-      Ok {
+      let kindLeft = relationKindFromYamlNode node true m.Groups.["kindLeft"].Value
+      let kindRight = relationKindFromYamlNode node false m.Groups.["kindRight"].Value
+      match kindLeft, kindRight with
+      | Ok { Data = kindLeft; Warnings = warnings1 }, Ok { Data = kindRight; Warnings = warnings2 } ->
+        Ok {
         Data = {
           Src =  srcHead :: srcTails
           Dist = m.Groups.["distEntity"].Value, m.Groups.["distField"].Value
+          Kind = kindLeft, kindRight
         }
         Warnings = []
-      }
+        }
+      | Error err1, Error err2 -> Error (err1 @ err2)
+      | _, Error err | Error err, _ -> Error err
     else
       parseError node (String.Format("`{0}` is not acceptable as relation", node.ToString()))
 
@@ -167,6 +192,7 @@ module Print =
   type Edge = {
     Src: (string * string) list
     Dist: string * string
+    Kind: RelationKind * RelationKind
   }
   type Graphviz = {
     Nodes: Node list
@@ -190,6 +216,7 @@ module Print =
               {
                 Src = List.map (fun src -> entity.Name, src) relation.Src
                 Dist = relation.Dist
+                Kind = relation.Kind
               } :: acc
             )
             acc
@@ -215,20 +242,46 @@ module Print =
   let nodeToString (node: Node): string =
     String.Format("""  {0} [label="<{0}>{0} | {1}\l"]""", makeValidLabel node.Name, recordToString node.Struct)
 
+  let relationKindToString kind =
+    match kind with
+    | RelationKind.One -> "teetee"
+    | RelationKind.ZeroOrOne -> "teeodot"
+    | RelationKind.ZeroOrMore -> "icurveodot"
+    | RelationKind.OneOrMore -> "icurvetee"
+
   let mutable edgeInterCount = 0
 
   let edgeToString edge =
+    let arrowhead = relationKindToString <| snd edge.Kind
+    let arrowtail = relationKindToString <| fst edge.Kind
     if edge.Src.Length = 1 then
       let src = edge.Src.[0]
-      [String.Format("  {0}:{1} -> {2}:{3}", makeValidLabel <| fst src, makeValidLabel <| snd src, makeValidLabel <| fst edge.Dist, makeValidLabel <| snd edge.Dist)], []
+      [String.Format(
+        "  {0}:{1} -> {2}:{3} [dir = both, arrowhead = {4}, arrowtail = {5}]",
+        makeValidLabel <| fst src,
+        makeValidLabel <| snd src,
+        makeValidLabel <| fst edge.Dist,
+        makeValidLabel <| snd edge.Dist,
+        arrowhead,
+        arrowtail)], []
     else
       let intermediate = String.Format("__intermediate{0}__", edgeInterCount)
       edgeInterCount <- edgeInterCount + 1
       let edges =
-        (String.Format("  {0} -> {1}:{2}", intermediate, makeValidLabel <| fst edge.Dist, makeValidLabel <| snd edge.Dist)) ::
+        (String.Format(
+          "  {0} -> {1}:{2} [dir = forward, arrowhead = {3}]",
+          intermediate,
+          makeValidLabel <| fst edge.Dist,
+          makeValidLabel <| snd edge.Dist,
+          arrowhead)) ::
         List.map
           (fun src ->
-            String.Format("  {0}:{1} -> {2} [dir=none]", makeValidLabel <| fst src, makeValidLabel <| snd src, intermediate)
+            String.Format(
+              "  {0}:{1} -> {2} [dir = back, arrowtail = {3}]",
+              makeValidLabel <| fst src,
+              makeValidLabel <| snd src,
+              intermediate,
+              arrowtail)
           )
           edge.Src
       let interNodes = String.Format("  {0} [shape=point, width=0.01, height=0.01]", intermediate)
@@ -269,9 +322,9 @@ digraph Schema {{
     sw.Close ()
 
 module Validation =
-  let validate x = x // TODO
+  let validate x = Ok x // TODO
 
-match Parse.schemaFromFile @"./sample.yaml" with
+match Parse.schemaFromFile @"./sample.yaml" |> Result.bind Validation.validate with
 | Ok { Data = schema; Warnings = warnings } ->
     List.iter (fun warning -> Printf.eprintfn "%s" <| warningToConsoleString warning) warnings;
     Print.schemaToFile @"./output.dot" schema

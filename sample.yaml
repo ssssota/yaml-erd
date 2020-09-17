@@ -16,7 +16,7 @@ schema:
           yesod: int
           actix-web: int
     relations:
-      - "(companyId) -> Company(id)"
+      - "(companyId) ||--|| Company(id)"
   Task:
     struct:
       id: int
@@ -27,7 +27,6 @@ schema:
         foo: int
         bar: int
     relations:
-      - "(staffId) -> Employee(id)"
-      - "(hoge) -> Employee(skillLevel.csharp)"
-      - "(fuga.foo) -> Employee(skillLevel.web-framework.yesod)"
-      - "(id, fuga.foo) -> Company(name)"
+      - "(staffId) ||--|| Employee(id)"
+      - "(hoge) }o--o| Employee(skillLevel.csharp)"
+      - "(fuga.foo) }|--o{ Employee(skillLevel.web-framework.yesod)"
