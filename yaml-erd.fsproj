@@ -1,11 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <RootNamespace>yaml_erd</RootNamespace>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <RootNamespace>yaml_erd</RootNamespace>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="Util.fs" />
     <Compile Include="Schema.fs" />
@@ -14,10 +12,8 @@
     <Compile Include="Validation.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="3.3.3" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
   </ItemGroup>
-
 </Project>

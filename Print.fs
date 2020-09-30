@@ -119,12 +119,14 @@ let private printGraphviz (graphviz: Graphviz): string =
 digraph Schema {{
   rankdir=LR
   graph [
-    charset = "UTF-8";
+    charset = "UTF-8",
+    ranksep = "1.0",
+    nodesep = "1.0",
   ]
 
   node [
-    shape = "record"
-    fontname = "Noto Sans Mono"
+    shape = "record",
+    fontname = "Noto Sans Mono",
     width = 3
   ]
 

@@ -1,4 +1,5 @@
-﻿
+﻿open Util
+
 match Parse.schemaFromFile @"./sample.yaml" |> Result.bind Validation.validate with
 | Ok { Data = schema; Warnings = warnings } ->
     List.iter (fun warning -> Printf.eprintfn "%s" <| Util.warningToConsoleString warning) warnings;
