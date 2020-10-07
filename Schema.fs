@@ -18,7 +18,6 @@ type Relation =
       Dist: string * string
       Kind: RelationKind * RelationKind }
 
-[<Struct>]
 type Entity =
     { Name: string
       Struct: (Key * Struct) list

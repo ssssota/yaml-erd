@@ -1,6 +1,6 @@
 ﻿open Util
 
-match Parse.schemaFromFile @"./sample.yaml" |> Result.bind Validation.validate with
+match Parse.schemaFromFile @"./sample_.yaml" |> Result.bind PostProc.postProc (* |> Result.bind Validation.validate *) with
 | Ok { Data = schema; Warnings = warnings } ->
     List.iter (fun warning -> Printf.eprintfn "%s" <| Util.warningToConsoleString warning) warnings;
     Print.schemaToFile @"./output.dot" schema

@@ -55,3 +55,13 @@ module Result =
         | Error err1, Error err2 -> Error <| err1 @ err2
         | _, Error err
         | Error err, _ -> Error err
+
+module List =
+    let rec findPop<'a> (pred: 'a -> bool) (xs: 'a list): 'a option * 'a list =
+        match xs with
+        | [] -> None, []
+        | x :: xs when pred x -> Some x, xs
+        | x :: xs ->
+            match findPop pred xs with
+            | None, xs -> None, x :: xs
+            | Some x_, xs -> Some x_, x :: xs

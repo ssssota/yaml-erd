@@ -51,8 +51,9 @@ let private printRecord =
 
     aux "" ""
 
-let private printNode (node: Node): string =
-    String.Format("""  {0} [label="<{0}>{0} | {1}\l"]""", makeValidLabel node.Name, printRecord node.Struct)
+let private printNode (index: int) (node: Node): string =
+    String.Format
+        ("""  {0} [label="<{0}>{0} | {1}\l" pos="{2},0!"]""", makeValidLabel node.Name, printRecord node.Struct, index)
 
 let private printRelationKind =
     function
@@ -106,7 +107,7 @@ let private printEdge edge =
 
 let private printGraphviz (graphviz: Graphviz): string =
     let nodes =
-        List.map printNode graphviz.Nodes
+        List.mapi printNode graphviz.Nodes
         |> String.concat "\n"
 
     let edges, interNodes =
