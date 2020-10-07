@@ -57,6 +57,11 @@ module Result =
         | Error err, _ -> Error err
 
 module List =
+    let rec mem<'a when 'a: equality> (x: 'a) =
+        function
+        | [] -> false
+        | y :: ys -> if x = y then true else mem x ys
+
     let rec findPop<'a> (pred: 'a -> bool) (xs: 'a list): 'a option * 'a list =
         match xs with
         | [] -> None, []

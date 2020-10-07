@@ -53,7 +53,10 @@ let private printRecord =
 
 let private printNode (index: int) (node: Node): string =
     String.Format
-        ("""  {0} [label="<{0}>{0} | {1}\l" pos="{2},0!"]""", makeValidLabel node.Name, printRecord node.Struct, index)
+        ("""  {0} [label="<{0}>{0} | {1}\l" pos="{2},0!"]""",
+         makeValidLabel node.Name,
+         printRecord node.Struct,
+         index * 3)
 
 let private printRelationKind =
     function
@@ -120,15 +123,15 @@ let private printGraphviz (graphviz: Graphviz): string =
 digraph Schema {{
   rankdir=LR
   graph [
-    charset = "UTF-8",
-    ranksep = "1.0",
-    nodesep = "1.0",
+    charset = "UTF-8"
+    ranksep = "1.0"
+    nodesep = "1.0"
   ]
 
   node [
-    shape = "record",
-    fontname = "Noto Sans Mono",
-    width = 3
+    shape = "record"
+    fontname = "Noto Sans Mono"
+    width = 2
   ]
 
 {0}

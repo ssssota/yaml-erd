@@ -19,6 +19,7 @@ let private hasEntityField (schema: Schema.T) (entityName: string) (field: strin
            <| Seq.toList (field.Split '.')) false schema
 
 (* TODO *)
+
 let private validateError (msg: string): Result<'a> =
     Error [ { StartLine = 0
               StartColumn = 0
