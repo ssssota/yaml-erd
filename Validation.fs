@@ -7,7 +7,7 @@ open Schema
 let rec private hasStructField (strct: Struct) (field: string list): bool =
     match strct with
     | Scalar _ -> List.isEmpty field
-    | Record fields_ -> List.exists (fun (key, v) -> key = field.Head && hasStructField v field.Tail) fields_
+    | Record fields_ ->  not (List.isEmpty field) && List.exists (fun (key, v) -> key = field.Head && hasStructField v field.Tail) fields_
 
 
 let private hasEntityField (schema: Schema.T) (entityName: string) (field: string): bool =

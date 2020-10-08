@@ -29,7 +29,6 @@ schema:
     relations:
       - "(staffId) -- Employee(id)"
       - "(hoge) -- Employee(skillLevel.csharp)"
-      - "(fuga) -- Employee(skillLevel.web-framework)"
       - "(fuga.foo) -- Employee(skillLevel.web-framework.yesod)"
   Foo:
     struct:
