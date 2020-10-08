@@ -38,11 +38,13 @@ let rec private sortByOrder (schema: Schema.T) (order: string list): (Entity lis
     match order with
     | [] -> [], schema
     | hd :: tl ->
-        let Some entity, schema =
+        let entity, schema =
             List.findPop (fun (entity: Entity) -> entity.Name = hd) schema
-
-        let tl, schema = sortByOrder schema tl
-        entity :: tl, schema
+        match entity with
+        | Some entity ->
+            let tl, schema = sortByOrder schema tl
+            entity :: tl, schema
+        | Option.None -> failwith "unreachable"
 
 let postProc (schema: Schema.T) =
     let order = calcOrder schema
