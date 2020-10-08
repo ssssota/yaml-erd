@@ -34,18 +34,17 @@ let private calcOrder (schema: Schema.T): string list =
 
 
 
-let rec private sortByOrder (schema: Schema.T) (order: string list): Schema.T =
+let rec private sortByOrder (schema: Schema.T) (order: string list): (Entity list * Entity list) =
     match order with
-    | [] -> schema
+    | [] -> [], schema
     | hd :: tl ->
         let Some entity, schema =
             List.findPop (fun (entity: Entity) -> entity.Name = hd) schema
 
-        let tl = sortByOrder schema tl
-        entity :: tl
+        let tl, schema = sortByOrder schema tl
+        entity :: tl, schema
 
 let postProc (schema: Schema.T) =
     let order = calcOrder schema
-    sortByOrder schema order
-    |> List.rev
-    |> Result.mkOk
+    let fixedEntities, freeEntities = sortByOrder schema order
+    Result.mkOk (List.rev fixedEntities, freeEntities)

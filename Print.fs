@@ -5,36 +5,13 @@ open System.IO
 
 open Schema
 
-type private Node =
-    { Name: string
-      Struct: (Key * Struct) list }
-
 type private Edge =
     { Src: (string * string) list
       Dist: string * string
       Kind: RelationKind * RelationKind }
 
-type private Graphviz = { Nodes: Node list; Edges: Edge list }
-
 let private makeValidLabel (str: string) =
     str.Replace(".", "__").Replace("-", "__")
-
-let private entityToNode (entity: Entity): Node =
-    { Name = entity.Name
-      Struct = entity.Struct }
-
-let private schemaToGraphviz (schema: Schema.T): Graphviz =
-    let nodes = List.map entityToNode schema
-
-    let edges =
-        List.fold (fun acc (entity: Entity) ->
-            List.fold (fun acc (relation: Relation) ->
-                { Src = List.map (fun src -> entity.Name, src) relation.Src
-                  Dist = relation.Dist
-                  Kind = relation.Kind }
-                :: acc) acc entity.Relations) [] schema
-
-    { Nodes = nodes; Edges = edges }
 
 let private printRecord =
     let rec aux indent prefix record =
@@ -51,12 +28,18 @@ let private printRecord =
 
     aux "" ""
 
-let private printNode (index: int) (node: Node): string =
+let private printFixedEntity (index: int) (entity: Entity): string =
     String.Format
         ("""  {0} [label="<{0}>{0} | {1}\l" pos="{2},0!"]""",
-         makeValidLabel node.Name,
-         printRecord node.Struct,
+         makeValidLabel entity.Name,
+         printRecord entity.Struct,
          index * 3)
+
+let private printFreeEntity (entity: Entity): string =
+    String.Format
+        ("""  {0} [label="<{0}>{0} | {1}\l" pos="0,1!"]""",
+         makeValidLabel entity.Name,
+         printRecord entity.Struct)
 
 let private printRelationKind =
     function
@@ -108,15 +91,18 @@ let private printEdge edge =
 
         edges, [ interNodes ]
 
-let private printGraphviz (graphviz: Graphviz): string =
-    let nodes =
-        List.mapi printNode graphviz.Nodes
+let private printSchema (fixedEntities: Entity list, freeEntities: Entity list) (edges: Edge list) : string =
+    let fixedNodes =
+        List.mapi printFixedEntity fixedEntities
+        |> String.concat "\n"
+    let freeNodes =
+        List.map printFreeEntity freeEntities
         |> String.concat "\n"
 
-    let edges, interNodes =
+    let edges, interEntities =
         List.fold (fun (accEdges, accInterNodes) edge ->
             let edges, interNodes = printEdge edge
-            (edges @ accEdges, interNodes @ accInterNodes)) ([], []) graphviz.Edges
+            (edges @ accEdges, interNodes @ accInterNodes)) ([], []) edges
 
     String.Format
         ("""
@@ -136,16 +122,28 @@ digraph Schema {{
 
 {0}
 {1}
-
 {2}
+
+{3}
 }}
 """,
-         nodes,
-         interNodes |> String.concat "\n",
+         fixedNodes,
+         freeNodes,
+         interEntities |> String.concat "\n",
          edges |> String.concat "\n")
 
-let schemaToFile (filename: string) (schema: Schema.T) =
-    let content = schemaToGraphviz schema |> printGraphviz
+let schemaToFile (filename: string) (fixedEntities: Entity list, freeEntities: Entity list) =
+    let calcEdges =
+        List.fold (fun acc (entity: Entity) ->
+            List.fold (fun acc (relation: Relation) ->
+                { Src = List.map (fun src -> entity.Name, src) relation.Src
+                  Dist = relation.Dist
+                  Kind = relation.Kind }
+                :: acc) acc entity.Relations)
+
+    let edges = calcEdges [] fixedEntities
+    let edges = calcEdges edges freeEntities
+    let content = printSchema (fixedEntities, freeEntities) edges
 
     let sw = new StreamWriter(filename)
     sw.Write(content)
