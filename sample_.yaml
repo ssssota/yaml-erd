@@ -34,3 +34,15 @@ schema:
     struct:
         id: int
         name: string
+  Bar:
+    struct:
+        id: int
+        name: string
+    relations:
+      - "(id) -- Baz(id)"
+  Baz:
+    struct:
+        id: int
+        name: string
+    relations:
+        - "(id) -- Foo(id)"

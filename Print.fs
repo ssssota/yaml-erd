@@ -2,6 +2,7 @@ module Print
 
 open System
 open System.IO
+open Util
 
 open Schema
 
@@ -21,25 +22,24 @@ let private printRecord =
                 <| if prefix = "" then key else prefix + "__" + key
 
             match strct with
-            | Scalar v -> String.Format("<{1}>{0}{2}: {3}", indent, prefix, key, v)
+            | Scalar v -> String.Format("""<tr><td port="{1}" align="left">{0}{2}: {3}</td></tr>""", indent, prefix, key, v)
             | Record fields ->
-                String.Format("<{1}>{0}{2}:\l|{3}", indent, prefix, key, aux (indent + "　") prefix fields)) record
-        |> String.concat "\l | "
+                let after = aux (indent + "　") prefix fields
+                String.Format("""    <tr><td port="{1}" align="left">{0}{2}: </td></tr>""", indent, prefix, key) + after) record
+        |> String.concat "\n        "
 
     aux "" ""
 
-let private printFixedEntity (index: int) (entity: Entity): string =
-    String.Format
-        ("""  {0} [label="<{0}>{0} | {1}\l" pos="{2},0!"]""",
-         makeValidLabel entity.Name,
-         printRecord entity.Struct,
-         index * 3)
-
-let private printFreeEntity (entity: Entity): string =
-    String.Format
-        ("""  {0} [label="<{0}>{0} | {1}\l" pos="0,1!"]""",
-         makeValidLabel entity.Name,
-         printRecord entity.Struct)
+let private printEntityRank (entities: Entity list): string =
+    if entities.IsEmpty then ""
+    else
+        let nodes = List.fold (fun acc entity -> acc + "\n" + String.Format("""  {0} [label=<
+    <table border="0" cellborder="1" cellspacing="0">
+        <tr><td>{0}</td></tr>
+        {1}
+    </table>>];""", makeValidLabel entity.Name, printRecord entity.Struct)) "" entities
+        let rank = String.Format("""  {{rank = same; {0} }}""", List.map (fun entity -> makeValidLabel entity.Name) entities |> String.concat "; ")
+        nodes + "\n" + rank
 
 let private printRelationKind =
     function
@@ -57,7 +57,7 @@ let private printEdge edge =
     if edge.Src.Length = 1 then
         let src = edge.Src.[0]
         [ String.Format
-            ("  {0}:{1} -> {2}:{3} [dir = both, arrowhead = {4}, arrowtail = {5}]",
+            ("  {0}:{1} -> {2}:{3} [arrowhead = {4}, arrowtail = {5}, constraint = false, dir = both];",
              makeValidLabel <| fst src,
              makeValidLabel <| snd src,
              makeValidLabel <| fst edge.Dist,
@@ -73,33 +73,30 @@ let private printEdge edge =
 
         let edges =
             (String.Format
-                ("  {0} -> {1}:{2} [dir = forward, arrowhead = {3}]",
+                ("  {0} -> {1}:{2} [arrowhead = {3}, constraint = false, dir = forward];",
                  intermediate,
                  makeValidLabel <| fst edge.Dist,
                  makeValidLabel <| snd edge.Dist,
                  arrowhead))
             :: List.map (fun src ->
                 String.Format
-                    ("  {0}:{1} -> {2} [dir = back, arrowtail = {3}]",
+                    ("  {0}:{1} -> {2} [arrowtail = {3}, constraint = false, dir = back];",
                      makeValidLabel <| fst src,
                      makeValidLabel <| snd src,
                      intermediate,
                      arrowtail)) edge.Src
 
         let interNodes =
-            String.Format("  {0} [shape=point, width=0.01, height=0.01]", intermediate)
+            String.Format("  {0} [shape = point, width = 0.01 height = 0.01];", intermediate)
 
         edges, [ interNodes ]
 
-let private printSchema (fixedEntities: Entity list, freeEntities: Entity list) (edges: Edge list) : string =
-    let fixedNodes =
-        List.mapi printFixedEntity fixedEntities
-        |> String.concat "\n"
-    let freeNodes =
-        List.map printFreeEntity freeEntities
-        |> String.concat "\n"
+let private printSchema (entityRanks: Entity list list) (edges: Edge list) : string =
+    let nodes = List.map printEntityRank entityRanks |> String.concat "\n"
+    let dummyEdge = String.concat " -> " <| List.map (fun entities -> if List.isEmpty entities then "" else (List.head entities).Name) entityRanks 
+    let dummyEdge = String.Format("""  {0} [style = "invis"]""", dummyEdge)
 
-    let edges, interEntities =
+    let edges, interNodes =
         List.fold (fun (accEdges, accInterNodes) edge ->
             let edges, interNodes = printEdge edge
             (edges @ accEdges, interNodes @ accInterNodes)) ([], []) edges
@@ -107,18 +104,15 @@ let private printSchema (fixedEntities: Entity list, freeEntities: Entity list) 
     String.Format
         ("""
 digraph Schema {{
-  rankdir=LR
   graph [
     charset = "UTF-8"
-    ranksep = "1.0"
-    nodesep = "1.0"
-  ]
+    newrank = true
+  ];
 
   node [
-    shape = "record"
+    shape = "none"
     fontname = "Noto Sans Mono"
-    width = 2
-  ]
+  ];
 
 {0}
 {1}
@@ -127,12 +121,12 @@ digraph Schema {{
 {3}
 }}
 """,
-         fixedNodes,
-         freeNodes,
-         interEntities |> String.concat "\n",
+         nodes,
+         interNodes |> String.concat "\n",
+         dummyEdge,
          edges |> String.concat "\n")
 
-let schemaToFile (filename: string) (fixedEntities: Entity list, freeEntities: Entity list) =
+let schemaToFile (filename: string) (rankedEntities: Entity list list) =
     let calcEdges =
         List.fold (fun acc (entity: Entity) ->
             List.fold (fun acc (relation: Relation) ->
@@ -140,10 +134,8 @@ let schemaToFile (filename: string) (fixedEntities: Entity list, freeEntities: E
                   Dist = relation.Dist
                   Kind = relation.Kind }
                 :: acc) acc entity.Relations)
-
-    let edges = calcEdges [] fixedEntities
-    let edges = calcEdges edges freeEntities
-    let content = printSchema (fixedEntities, freeEntities) edges
+    let edges = List.fold calcEdges [] rankedEntities
+    let content = printSchema rankedEntities edges
 
     let sw = new StreamWriter(filename)
     sw.Write(content)

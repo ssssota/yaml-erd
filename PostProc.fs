@@ -46,7 +46,10 @@ let rec private sortByOrder (schema: Schema.T) (order: string list): (Entity lis
             entity :: tl, schema
         | Option.None -> failwith "unreachable"
 
-let postProc (schema: Schema.T) =
-    let order = calcOrder schema
-    let fixedEntities, freeEntities = sortByOrder schema order
-    Result.mkOk (List.rev fixedEntities, freeEntities)
+let postProc (schema: Schema.T): Result<Entity list list> =
+    let rec impl schema=
+        let order = calcOrder schema
+        let entities, rest = sortByOrder schema order
+        if List.length rest = List.length schema then List.rev entities :: [rest]
+        else List.rev entities :: (impl rest)
+    impl schema |> List.filter (List.isEmpty >> not) |> Result.mkOk
