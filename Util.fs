@@ -56,7 +56,19 @@ module Result =
         | _, Error err
         | Error err, _ -> Error err
 
+module Option =
+    let unwrap = function
+    | None -> failwith "invalid unwrap"
+    | Some x -> x
+
 module List =
+    let maxOf<'a> (f: 'a -> int) (d: 'a) (xs: 'a list): 'a =
+        List.fold (fun acc x ->
+            let v = f x
+            if v > fst acc then v, x
+            else acc
+        ) (f d, d) xs |> snd
+
     let rec mem<'a when 'a: equality> (x: 'a) =
         function
         | [] -> false
@@ -70,3 +82,15 @@ module List =
             match findPop pred xs with
             | None, xs -> None, x :: xs
             | Some x_, xs -> Some x_, x :: xs
+
+    let rec lookup (name: string) (xs: (string * 'a) list): 'a option =
+        match xs with
+        | [] -> None
+        | (name', x) :: xs ->
+            if name = name' then Some x
+            else lookup name xs
+
+    let rec minus<'a when 'a: equality> (xs: 'a list) (ys: 'a list) =
+        List.fold (fun acc y ->
+            let _, acc = findPop ((=) y) acc
+            acc) xs ys

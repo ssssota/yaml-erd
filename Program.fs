@@ -19,7 +19,7 @@ let main args =
       | Input path -> path, output
       | Output path -> input, path) ("", "./output.dot") <| (parser.Parse args).GetAllResults()
 
-    match Parse.schemaFromFile input |> Result.bind Validation.validate |> Result.bind PostProc.postProc with
+    match Parse.schemaFromFile input |> Result.bind Validation.validate with
     | Ok { Data = schema; Warnings = warnings } ->
       List.iter (fun warning -> Printf.eprintfn "%s" <| warningToConsoleString warning) warnings;
       Print.schemaToFile output schema

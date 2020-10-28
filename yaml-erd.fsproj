@@ -7,10 +7,10 @@
   <ItemGroup>
     <Compile Include="Util.fs" />
     <Compile Include="Schema.fs" />
-    <Compile Include="Parse.fs" />
+    <Compile Include="CalcOrder.fs" />
     <Compile Include="Print.fs" />
+    <Compile Include="Parse.fs" />
     <Compile Include="Validation.fs" />
-    <Compile Include="PostProc.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
