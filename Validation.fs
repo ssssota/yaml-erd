@@ -20,42 +20,50 @@ let private hasEntityField (schema: Schema.T) (entityName: string) (field: strin
 
 (* TODO *)
 
-let private validateError (msg: string): Result<'a> =
-    Error [ { StartLine = 0
-              StartColumn = 0
-              EndLine = 0
-              EndColumn = 0
-              Message = msg } ]
+let private validateError (msg: string): ErrorValue =
+    {
+        StartLine = 0
+        StartColumn = 0
+        EndLine = 0
+        EndColumn = 0
+        Message = msg }
 
-let private validateRelation (schema: Schema.T): Result<Schema.T> =
-    List.fold (fun (schema: Result<Schema.T>) (entity: Entity) ->
-        List.fold (fun (schema: Result<Schema.T>) relation ->
-            let schema: Result<Schema.T> =
-                List.fold (fun schema src ->
-                    schema
-                    |> Result.bind (fun schema ->
+let validateRelation (schema: Schema.T): Util.Warning list * Util.ErrorValue list =
+    List.fold (fun acc (entity: Entity) ->
+        List.fold (fun (accWarnings, accErrors) (relation: Relation) ->
+            let accErrors =
+                List.fold
+                    (fun acc src ->
                         if hasEntityField schema entity.Name src then
-                            Result.mkOk schema
+                            acc
                         else
-                            validateError
-                            <| String.Format("{0}.{1}", entity.Name, src)))
+                            (validateError <| String.Format("{0}.{1}", entity.Name, src)) :: acc
+                    ) accErrors relation.Src
+            let distEntity = List.find (fun entity -> entity.Name = fst relation.Dist) schema
+            let loopRelations =
+                List.filter (fun (distRelation: Relation) ->
+                    fst distRelation.Dist = entity.Name
+                    && List.contains (snd distRelation.Dist) relation.Src
+                    && List.contains (snd relation.Dist) distRelation.Src)
+                    distEntity.Relations
+            let accErrors =
+                List.tryHead loopRelations
+                |> Option.map (fun relationRev ->
+                    String.Format(
+                        "loop relations found! {0}.{1} <-> {2}.{3}",
+                        fst relationRev.Dist, snd relationRev.Dist,
+                        fst relation.Dist, snd relation.Dist)
+                    |> validateError
+                )
+                |> List.appendOpt accErrors
+            let accErrors =
+                if hasEntityField schema <| fst relation.Dist <| snd relation.Dist then accErrors
+                else (validateError <| String.Format("{0}.{1}", fst relation.Dist, snd relation.Dist)) :: accErrors
+            accWarnings, accErrors
+        ) acc entity.Relations
+    ) ([], []) schema
 
-                <| schema
-                <| relation.Src
-
-            Result.bind (fun schema ->
-                if hasEntityField schema
-                   <| fst relation.Dist
-                   <| snd relation.Dist then
-                    Result.mkOk schema
-                else
-                    validateError
-                    <| String.Format("{0}.{1}", fst relation.Dist, snd relation.Dist)) schema)
-        <| schema
-        <| entity.Relations)
-    <| Result.mkOk schema
-    <| schema
-
-
-let validate (schema: Schema.T) =
-    Result.mkOk schema |> Result.bind validateRelation
+let validate (schema: Schema.T): Result<Schema.T> =
+    let warnings, errors = validateRelation schema
+    if List.isEmpty errors then Ok { Data = schema; Warnings = warnings}
+    else Error errors

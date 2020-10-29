@@ -1,0 +1,145 @@
+schema:
+  Hoge1:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge2(id)"
+      - "(id) ||--|| Hoge11(id)"
+  Hoge2:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge3(id)"
+      - "(id) ||--|| Hoge11(id)"
+  Hoge3:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge4(id)"
+  Hoge4:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge5(id)"
+  Hoge5:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge6(id)"
+  Hoge6:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge7(id)"
+  Hoge7:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge8(id)"
+  Hoge8:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge9(id)"
+  Hoge9:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge10(id)"
+  Hoge10:
+    struct:
+      id: int
+      name: string
+
+  Hoge11:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge12(id)"
+  Hoge12:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge13(id)"
+      - "(id) ||--|| Hoge19(id)"
+  Hoge13:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge4(id)"
+      - "(id) ||--|| Hoge14(id)"
+      - "(id) ||--|| Hoge19(id)"
+  Hoge14:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge15(id)"
+  Hoge15:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge16(id)"
+  Hoge16:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge17(id)"
+  Hoge17:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge18(id)"
+  Hoge18:
+    struct:
+      id: int
+      name: string
+
+  Hoge19:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge20(id)"
+  Hoge20:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge21(id)"
+  Hoge21:
+    struct:
+      id: int
+      name: string
+
+  Hoge22:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge23(id)"
+  Hoge23:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) ||--|| Hoge24(id)"
+  Hoge24:
+    struct:
+      id: int
+      name: string

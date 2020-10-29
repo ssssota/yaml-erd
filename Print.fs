@@ -114,6 +114,8 @@ digraph Schema {{
   graph [
     charset = "UTF-8"
     newrank = true
+    ranksep = 1.5
+    nodesep = 1.5
   ];
 
   node [

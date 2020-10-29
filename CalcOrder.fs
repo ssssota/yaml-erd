@@ -17,14 +17,17 @@ let private solveShortestPath (state: Dictionary<string, string list option>) (g
                 let xs: string list =
                     List.fold
                         (fun (acc: string list) (dist: string) ->
-                        match state.[dist] with
-                        | Option.None ->
-                            state.[dist] <- Some (x :: current)
-                            dist :: acc
-                        | Some path ->
-                            if List.length current + 1 < List.length path then
-                                state.[dist] <- Some (x :: current)
-                                dist :: acc
+                            if state.ContainsKey dist then
+                                match state.[dist] with
+                                | Option.None ->
+                                    state.[dist] <- Some (x :: current)
+                                    dist :: acc
+                                | Some path ->
+                                    if not <| List.contains dist current && List.length current + 1 > List.length path then
+                                        state.[dist] <- Some (x :: current)
+                                        dist :: acc
+                                    else
+                                        acc
                             else
                                 acc
                         )
@@ -40,6 +43,10 @@ let private longestPath (entityNames: string list) (graph: (string * string list
         List.iter (fun name -> state.Add(name, Option.None)) entityNames
         state.[entity] <- Some []
         solveShortestPath state graph entity
+        List.iter (fun key ->
+            match state.[key] with
+            | Option.None -> ()
+            | Some path -> state.[key] <- Some (key :: path)) (List.ofSeq state.Keys)
         let max = List.maxOf (function
             | Option.None -> 0
             | Some xs -> List.length xs) Option.None (List.ofSeq state.Values)
@@ -64,7 +71,7 @@ let calcOrder (schema: Schema.T): string list list =
             schema
     let rec aux acc entityNames =
         let longest = longestPath entityNames graph
-        if List.length longest = List.length entityNames then longest :: acc (* TODO *)
-        else aux (longest :: acc) <| List.minus entityNames longest
-    aux [] <| List.map (fun entity -> entity.Name) schema
+        if List.isEmpty longest then acc
+        else aux (List.rev longest :: acc) <| List.minus entityNames longest
+    aux [] <| List.map (fun entity -> entity.Name) schema |> List.rev
 

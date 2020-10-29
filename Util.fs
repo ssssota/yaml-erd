@@ -94,3 +94,8 @@ module List =
         List.fold (fun acc y ->
             let _, acc = findPop ((=) y) acc
             acc) xs ys
+
+    let appendOpt<'a> (xs: 'a list) (x: 'a option): 'a list =
+        match x with
+        | None -> xs
+        | Some x -> x :: xs

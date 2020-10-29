@@ -28,6 +28,6 @@ let main args =
       List.iter (fun err -> Printf.eprintfn "%s" <| errorToConsoleString err) errs
       -1
   with
-  | _ ->
-    eprintf "%s" <| parser.PrintUsage()
+  | e ->
+    Printf.eprintfn "%A" e
     -1

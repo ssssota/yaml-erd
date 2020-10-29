@@ -142,4 +142,4 @@ let private parseSchema (node: YamlNode) =
 let schemaFromFile (filename: string): Result<T> =
     let yaml = YamlStream()
     yaml.Load(new StreamReader(filename, Encoding.UTF8))
-    parseSchema (yaml.Documents.[0].RootNode)
+    parseSchema (yaml.Documents.[0].RootNode) |> Result.mapOk List.rev

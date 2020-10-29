@@ -1,0 +1,29 @@
+schema:
+  Hoge1:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) -- Hoge2(id)"
+  Hoge2:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) -- Hoge3(id)"
+  Hoge3:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) -- Hoge4(id)"
+  Hoge4:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) -- Hoge5(id)"
+  Hoge5:
+    struct:
+      id: int
+      name: string
