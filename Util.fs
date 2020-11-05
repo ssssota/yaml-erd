@@ -99,3 +99,10 @@ module List =
         match x with
         | None -> xs
         | Some x -> x :: xs
+
+    let rec tryNth<'a> (xs: 'a list) (i: int): 'a option =
+        match xs with
+        | [] -> None
+        | x :: xs ->
+            if i = 0 then Some x
+            else tryNth xs (i-1)

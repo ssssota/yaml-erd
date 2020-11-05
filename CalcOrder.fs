@@ -109,7 +109,7 @@ let private longestRowPath (entityIndices: int list) (graph: int list array): in
         Array.iteri (fun idx path ->
             match path with
             | Option.None -> ()
-            | Some path -> state.[idx] <- Some (idx :: path)) state
+            | Some path -> state.[idx] <- Some path) state
         let max = List.maxOf (function
             | Option.None -> 0
             | Some xs -> List.length xs) Option.None (List.ofSeq state)

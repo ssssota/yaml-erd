@@ -90,11 +90,29 @@ let private printEdges edges =
             edges, interNode :: accInterNodes
     List.fold printEdge ([], []) edges
 
- 
+
 let private printLayout (orders: string list list): string =
     let ranks = List.map (fun order -> String.Format("""  {{rank = same; {0} }}""", String.concat "; " order)) orders |> String.concat "\n"
-    let dummyEdge = String.Format("""  {0} [style = "invis"]""", List.map List.head orders |> String.concat " -> ")
-    ranks + "\n" + dummyEdge
+    let lineEdges =
+        List.map (fun order ->
+            if List.length order < 2 then ""
+            else String.Format("""  {0} [style = "invis"]""", String.concat " -> " order)
+        ) orders |> String.concat "\n"
+    let maxLength = List.fold (fun acc order -> max acc <| List.length order) 0 orders
+    let dummyEdge: string list =
+        List.map (fun idx ->
+            let nodes =
+                List.fold (fun (acc: string list) (order: string list) ->
+                    match List.tryNth order idx with
+                    | Option.None -> acc
+                    | Some x -> x :: acc) [] orders
+            if List.length nodes < 2 then ""
+            else
+                let edge: string = nodes |> String.concat " -> "
+                String.Format("""  {0} [style = "invis"]""", edge)
+        ) (List.ofSeq <| seq{ 0..maxLength })
+
+    ranks + "\n" + lineEdges + "\n" + (String.concat "\n" dummyEdge)
 
 let private printSchema schema: string =
     let nodes = List.map printEntity schema |> String.concat "\n"
