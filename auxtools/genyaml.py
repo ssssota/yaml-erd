@@ -18,7 +18,7 @@ rel_prob = args.relation_prob
 
 def mkEntity(n):
     relations = []
-    for i in range(n_entities):
+    for i in range(n+1, n_entities):
         if n != i and random.random() <= rel_prob:
             relations.append('(id) -- Entity{i}(id)'.format(i=i))
     return {

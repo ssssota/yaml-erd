@@ -39,23 +39,26 @@ let validateRelation (schema: Schema.T): Util.Warning list * Util.ErrorValue lis
                         else
                             (validateError <| String.Format("{0}.{1}", entity.Name, src)) :: acc
                     ) accErrors relation.Src
-            let distEntity = List.find (fun entity -> entity.Name = fst relation.Dist) schema
-            let loopRelations =
-                List.filter (fun (distRelation: Relation) ->
-                    fst distRelation.Dist = entity.Name
-                    && List.contains (snd distRelation.Dist) relation.Src
-                    && List.contains (snd relation.Dist) distRelation.Src)
-                    distEntity.Relations
-            let accErrors =
-                List.tryHead loopRelations
-                |> Option.map (fun relationRev ->
-                    String.Format(
-                        "loop relations found! {0}.{1} <-> {2}.{3}",
-                        fst relationRev.Dist, snd relationRev.Dist,
-                        fst relation.Dist, snd relation.Dist)
-                    |> validateError
-                )
-                |> List.appendOpt accErrors
+            let accErrors = match List.tryFind (fun entity -> entity.Name = fst relation.Dist) schema with
+                | Option.None ->
+                    let err = validateError <| String.Format("dist of relation {0} not found!", relation)
+                    err :: accErrors
+                | Some distEntity ->
+                    let loopRelations =
+                        List.filter (fun (distRelation: Relation) ->
+                            fst distRelation.Dist = entity.Name
+                            && List.contains (snd distRelation.Dist) relation.Src
+                            && List.contains (snd relation.Dist) distRelation.Src)
+                            distEntity.Relations
+                    List.tryHead loopRelations
+                        |> Option.map (fun relationRev ->
+                            String.Format(
+                                "loop relations found! {0}.{1} <-> {2}.{3}",
+                                fst relationRev.Dist, snd relationRev.Dist,
+                                fst relation.Dist, snd relation.Dist)
+                            |> validateError
+                    )
+                    |> List.appendOpt accErrors
             let accErrors =
                 if hasEntityField schema <| fst relation.Dist <| snd relation.Dist then accErrors
                 else (validateError <| String.Format("{0}.{1}", fst relation.Dist, snd relation.Dist)) :: accErrors

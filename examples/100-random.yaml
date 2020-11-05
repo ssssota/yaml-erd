@@ -1,0 +1,978 @@
+schema:
+  Entity0:
+    relations:
+    - (id) -- Entity1(id)
+    - (id) -- Entity9(id)
+    - (id) -- Entity11(id)
+    - (id) -- Entity19(id)
+    - (id) -- Entity26(id)
+    - (id) -- Entity29(id)
+    - (id) -- Entity36(id)
+    - (id) -- Entity55(id)
+    - (id) -- Entity56(id)
+    - (id) -- Entity67(id)
+    - (id) -- Entity90(id)
+    - (id) -- Entity98(id)
+    struct:
+      data: name
+      id: int
+  Entity1:
+    relations:
+    - (id) -- Entity7(id)
+    - (id) -- Entity17(id)
+    - (id) -- Entity23(id)
+    - (id) -- Entity29(id)
+    - (id) -- Entity33(id)
+    - (id) -- Entity60(id)
+    - (id) -- Entity61(id)
+    struct:
+      data: name
+      id: int
+  Entity10:
+    relations:
+    - (id) -- Entity27(id)
+    - (id) -- Entity36(id)
+    - (id) -- Entity39(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity92(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity11:
+    relations:
+    - (id) -- Entity13(id)
+    - (id) -- Entity26(id)
+    - (id) -- Entity27(id)
+    - (id) -- Entity34(id)
+    - (id) -- Entity35(id)
+    - (id) -- Entity57(id)
+    - (id) -- Entity59(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity93(id)
+    struct:
+      data: name
+      id: int
+  Entity12:
+    relations:
+    - (id) -- Entity23(id)
+    - (id) -- Entity30(id)
+    - (id) -- Entity39(id)
+    - (id) -- Entity43(id)
+    - (id) -- Entity58(id)
+    - (id) -- Entity65(id)
+    - (id) -- Entity74(id)
+    - (id) -- Entity97(id)
+    struct:
+      data: name
+      id: int
+  Entity13:
+    relations:
+    - (id) -- Entity25(id)
+    - (id) -- Entity31(id)
+    - (id) -- Entity54(id)
+    - (id) -- Entity58(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity14:
+    relations:
+    - (id) -- Entity21(id)
+    - (id) -- Entity30(id)
+    - (id) -- Entity46(id)
+    - (id) -- Entity47(id)
+    - (id) -- Entity53(id)
+    - (id) -- Entity54(id)
+    - (id) -- Entity57(id)
+    - (id) -- Entity65(id)
+    - (id) -- Entity68(id)
+    - (id) -- Entity80(id)
+    - (id) -- Entity83(id)
+    struct:
+      data: name
+      id: int
+  Entity15:
+    relations:
+    - (id) -- Entity29(id)
+    - (id) -- Entity33(id)
+    - (id) -- Entity34(id)
+    - (id) -- Entity35(id)
+    - (id) -- Entity37(id)
+    - (id) -- Entity48(id)
+    - (id) -- Entity61(id)
+    - (id) -- Entity67(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity92(id)
+    struct:
+      data: name
+      id: int
+  Entity16:
+    relations:
+    - (id) -- Entity21(id)
+    - (id) -- Entity37(id)
+    - (id) -- Entity44(id)
+    - (id) -- Entity59(id)
+    - (id) -- Entity70(id)
+    - (id) -- Entity75(id)
+    struct:
+      data: name
+      id: int
+  Entity17:
+    relations:
+    - (id) -- Entity21(id)
+    - (id) -- Entity42(id)
+    - (id) -- Entity53(id)
+    - (id) -- Entity63(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity86(id)
+    struct:
+      data: name
+      id: int
+  Entity18:
+    relations:
+    - (id) -- Entity19(id)
+    - (id) -- Entity51(id)
+    - (id) -- Entity68(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity79(id)
+    - (id) -- Entity86(id)
+    - (id) -- Entity89(id)
+    - (id) -- Entity91(id)
+    struct:
+      data: name
+      id: int
+  Entity19:
+    relations:
+    - (id) -- Entity30(id)
+    - (id) -- Entity32(id)
+    - (id) -- Entity35(id)
+    - (id) -- Entity52(id)
+    - (id) -- Entity58(id)
+    - (id) -- Entity65(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity81(id)
+    struct:
+      data: name
+      id: int
+  Entity2:
+    relations:
+    - (id) -- Entity6(id)
+    - (id) -- Entity10(id)
+    - (id) -- Entity30(id)
+    - (id) -- Entity32(id)
+    - (id) -- Entity38(id)
+    - (id) -- Entity40(id)
+    - (id) -- Entity48(id)
+    - (id) -- Entity50(id)
+    - (id) -- Entity52(id)
+    - (id) -- Entity56(id)
+    - (id) -- Entity64(id)
+    - (id) -- Entity83(id)
+    - (id) -- Entity90(id)
+    struct:
+      data: name
+      id: int
+  Entity20:
+    relations:
+    - (id) -- Entity65(id)
+    - (id) -- Entity87(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity21:
+    relations:
+    - (id) -- Entity26(id)
+    - (id) -- Entity28(id)
+    - (id) -- Entity36(id)
+    - (id) -- Entity38(id)
+    - (id) -- Entity49(id)
+    - (id) -- Entity82(id)
+    - (id) -- Entity90(id)
+    - (id) -- Entity92(id)
+    struct:
+      data: name
+      id: int
+  Entity22:
+    relations:
+    - (id) -- Entity27(id)
+    - (id) -- Entity29(id)
+    - (id) -- Entity38(id)
+    - (id) -- Entity48(id)
+    - (id) -- Entity59(id)
+    - (id) -- Entity63(id)
+    - (id) -- Entity64(id)
+    - (id) -- Entity83(id)
+    - (id) -- Entity88(id)
+    - (id) -- Entity89(id)
+    struct:
+      data: name
+      id: int
+  Entity23:
+    relations:
+    - (id) -- Entity27(id)
+    - (id) -- Entity29(id)
+    - (id) -- Entity47(id)
+    - (id) -- Entity56(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity74(id)
+    - (id) -- Entity86(id)
+    struct:
+      data: name
+      id: int
+  Entity24:
+    relations:
+    - (id) -- Entity29(id)
+    - (id) -- Entity32(id)
+    - (id) -- Entity45(id)
+    - (id) -- Entity49(id)
+    - (id) -- Entity54(id)
+    - (id) -- Entity61(id)
+    - (id) -- Entity74(id)
+    - (id) -- Entity79(id)
+    - (id) -- Entity94(id)
+    struct:
+      data: name
+      id: int
+  Entity25:
+    relations:
+    - (id) -- Entity27(id)
+    - (id) -- Entity33(id)
+    - (id) -- Entity49(id)
+    - (id) -- Entity80(id)
+    - (id) -- Entity84(id)
+    - (id) -- Entity90(id)
+    - (id) -- Entity92(id)
+    struct:
+      data: name
+      id: int
+  Entity26:
+    relations:
+    - (id) -- Entity30(id)
+    - (id) -- Entity62(id)
+    - (id) -- Entity69(id)
+    - (id) -- Entity70(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity27:
+    relations:
+    - (id) -- Entity29(id)
+    - (id) -- Entity31(id)
+    - (id) -- Entity43(id)
+    - (id) -- Entity48(id)
+    - (id) -- Entity50(id)
+    - (id) -- Entity55(id)
+    - (id) -- Entity66(id)
+    - (id) -- Entity83(id)
+    - (id) -- Entity86(id)
+    - (id) -- Entity95(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity28:
+    relations:
+    - (id) -- Entity36(id)
+    - (id) -- Entity94(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity29:
+    relations:
+    - (id) -- Entity38(id)
+    - (id) -- Entity41(id)
+    - (id) -- Entity51(id)
+    - (id) -- Entity59(id)
+    - (id) -- Entity86(id)
+    - (id) -- Entity87(id)
+    - (id) -- Entity92(id)
+    struct:
+      data: name
+      id: int
+  Entity3:
+    relations:
+    - (id) -- Entity17(id)
+    - (id) -- Entity27(id)
+    - (id) -- Entity30(id)
+    - (id) -- Entity40(id)
+    - (id) -- Entity51(id)
+    - (id) -- Entity66(id)
+    - (id) -- Entity77(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity88(id)
+    struct:
+      data: name
+      id: int
+  Entity30:
+    relations:
+    - (id) -- Entity43(id)
+    - (id) -- Entity54(id)
+    - (id) -- Entity63(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity91(id)
+    - (id) -- Entity94(id)
+    struct:
+      data: name
+      id: int
+  Entity31:
+    relations:
+    - (id) -- Entity37(id)
+    - (id) -- Entity40(id)
+    - (id) -- Entity49(id)
+    - (id) -- Entity59(id)
+    - (id) -- Entity63(id)
+    - (id) -- Entity64(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity90(id)
+    - (id) -- Entity94(id)
+    struct:
+      data: name
+      id: int
+  Entity32:
+    relations:
+    - (id) -- Entity35(id)
+    - (id) -- Entity37(id)
+    - (id) -- Entity43(id)
+    - (id) -- Entity46(id)
+    - (id) -- Entity60(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity33:
+    relations:
+    - (id) -- Entity36(id)
+    - (id) -- Entity38(id)
+    - (id) -- Entity43(id)
+    - (id) -- Entity61(id)
+    - (id) -- Entity63(id)
+    - (id) -- Entity64(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity72(id)
+    - (id) -- Entity77(id)
+    - (id) -- Entity79(id)
+    struct:
+      data: name
+      id: int
+  Entity34:
+    relations:
+    - (id) -- Entity41(id)
+    - (id) -- Entity45(id)
+    - (id) -- Entity53(id)
+    - (id) -- Entity72(id)
+    - (id) -- Entity79(id)
+    - (id) -- Entity80(id)
+    - (id) -- Entity96(id)
+    struct:
+      data: name
+      id: int
+  Entity35:
+    relations:
+    - (id) -- Entity39(id)
+    - (id) -- Entity41(id)
+    - (id) -- Entity48(id)
+    - (id) -- Entity50(id)
+    - (id) -- Entity55(id)
+    - (id) -- Entity66(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity84(id)
+    - (id) -- Entity86(id)
+    - (id) -- Entity97(id)
+    - (id) -- Entity98(id)
+    struct:
+      data: name
+      id: int
+  Entity36:
+    relations:
+    - (id) -- Entity43(id)
+    - (id) -- Entity45(id)
+    - (id) -- Entity49(id)
+    - (id) -- Entity77(id)
+    - (id) -- Entity82(id)
+    - (id) -- Entity84(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity37:
+    relations:
+    - (id) -- Entity53(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity80(id)
+    - (id) -- Entity86(id)
+    struct:
+      data: name
+      id: int
+  Entity38:
+    relations:
+    - (id) -- Entity39(id)
+    - (id) -- Entity44(id)
+    - (id) -- Entity52(id)
+    - (id) -- Entity54(id)
+    - (id) -- Entity67(id)
+    - (id) -- Entity68(id)
+    - (id) -- Entity81(id)
+    struct:
+      data: name
+      id: int
+  Entity39:
+    relations:
+    - (id) -- Entity54(id)
+    - (id) -- Entity61(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity76(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity81(id)
+    - (id) -- Entity84(id)
+    - (id) -- Entity87(id)
+    - (id) -- Entity97(id)
+    struct:
+      data: name
+      id: int
+  Entity4:
+    relations:
+    - (id) -- Entity19(id)
+    - (id) -- Entity26(id)
+    - (id) -- Entity30(id)
+    - (id) -- Entity36(id)
+    - (id) -- Entity47(id)
+    - (id) -- Entity53(id)
+    - (id) -- Entity57(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity85(id)
+    - (id) -- Entity86(id)
+    struct:
+      data: name
+      id: int
+  Entity40:
+    relations:
+    - (id) -- Entity52(id)
+    - (id) -- Entity56(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity94(id)
+    struct:
+      data: name
+      id: int
+  Entity41:
+    relations:
+    - (id) -- Entity42(id)
+    - (id) -- Entity50(id)
+    - (id) -- Entity61(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity79(id)
+    - (id) -- Entity86(id)
+    - (id) -- Entity96(id)
+    - (id) -- Entity97(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity42:
+    relations:
+    - (id) -- Entity43(id)
+    - (id) -- Entity44(id)
+    - (id) -- Entity48(id)
+    - (id) -- Entity76(id)
+    - (id) -- Entity83(id)
+    struct:
+      data: name
+      id: int
+  Entity43:
+    relations:
+    - (id) -- Entity46(id)
+    - (id) -- Entity63(id)
+    - (id) -- Entity77(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity79(id)
+    - (id) -- Entity88(id)
+    - (id) -- Entity97(id)
+    struct:
+      data: name
+      id: int
+  Entity44:
+    relations:
+    - (id) -- Entity46(id)
+    - (id) -- Entity77(id)
+    - (id) -- Entity89(id)
+    - (id) -- Entity92(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity45:
+    relations:
+    - (id) -- Entity53(id)
+    - (id) -- Entity72(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity46:
+    relations:
+    - (id) -- Entity70(id)
+    - (id) -- Entity76(id)
+    - (id) -- Entity77(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity88(id)
+    struct:
+      data: name
+      id: int
+  Entity47:
+    relations:
+    - (id) -- Entity61(id)
+    - (id) -- Entity70(id)
+    - (id) -- Entity86(id)
+    - (id) -- Entity92(id)
+    struct:
+      data: name
+      id: int
+  Entity48:
+    relations:
+    - (id) -- Entity53(id)
+    - (id) -- Entity61(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity81(id)
+    struct:
+      data: name
+      id: int
+  Entity49:
+    relations:
+    - (id) -- Entity51(id)
+    - (id) -- Entity62(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity5:
+    relations:
+    - (id) -- Entity34(id)
+    - (id) -- Entity42(id)
+    - (id) -- Entity44(id)
+    - (id) -- Entity64(id)
+    - (id) -- Entity90(id)
+    struct:
+      data: name
+      id: int
+  Entity50:
+    relations:
+    - (id) -- Entity56(id)
+    - (id) -- Entity57(id)
+    - (id) -- Entity70(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity78(id)
+    - (id) -- Entity88(id)
+    struct:
+      data: name
+      id: int
+  Entity51:
+    relations:
+    - (id) -- Entity55(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity77(id)
+    - (id) -- Entity91(id)
+    - (id) -- Entity94(id)
+    - (id) -- Entity98(id)
+    struct:
+      data: name
+      id: int
+  Entity52:
+    relations:
+    - (id) -- Entity66(id)
+    - (id) -- Entity68(id)
+    - (id) -- Entity87(id)
+    struct:
+      data: name
+      id: int
+  Entity53:
+    relations:
+    - (id) -- Entity72(id)
+    struct:
+      data: name
+      id: int
+  Entity54:
+    relations:
+    - (id) -- Entity63(id)
+    - (id) -- Entity64(id)
+    - (id) -- Entity86(id)
+    - (id) -- Entity87(id)
+    struct:
+      data: name
+      id: int
+  Entity55:
+    relations:
+    - (id) -- Entity67(id)
+    - (id) -- Entity69(id)
+    struct:
+      data: name
+      id: int
+  Entity56:
+    relations:
+    - (id) -- Entity66(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity57:
+    relations:
+    - (id) -- Entity82(id)
+    - (id) -- Entity83(id)
+    - (id) -- Entity84(id)
+    - (id) -- Entity87(id)
+    - (id) -- Entity90(id)
+    - (id) -- Entity96(id)
+    struct:
+      data: name
+      id: int
+  Entity58:
+    relations:
+    - (id) -- Entity74(id)
+    - (id) -- Entity86(id)
+    struct:
+      data: name
+      id: int
+  Entity59:
+    relations:
+    - (id) -- Entity60(id)
+    - (id) -- Entity62(id)
+    - (id) -- Entity69(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity81(id)
+    - (id) -- Entity88(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity6:
+    relations:
+    - (id) -- Entity15(id)
+    - (id) -- Entity22(id)
+    - (id) -- Entity33(id)
+    - (id) -- Entity39(id)
+    - (id) -- Entity52(id)
+    - (id) -- Entity65(id)
+    - (id) -- Entity73(id)
+    - (id) -- Entity82(id)
+    - (id) -- Entity86(id)
+    struct:
+      data: name
+      id: int
+  Entity60:
+    relations:
+    - (id) -- Entity67(id)
+    - (id) -- Entity84(id)
+    - (id) -- Entity85(id)
+    - (id) -- Entity89(id)
+    struct:
+      data: name
+      id: int
+  Entity61:
+    relations:
+    - (id) -- Entity69(id)
+    - (id) -- Entity89(id)
+    struct:
+      data: name
+      id: int
+  Entity62:
+    relations:
+    - (id) -- Entity64(id)
+    - (id) -- Entity87(id)
+    - (id) -- Entity90(id)
+    - (id) -- Entity97(id)
+    struct:
+      data: name
+      id: int
+  Entity63:
+    relations:
+    - (id) -- Entity74(id)
+    - (id) -- Entity80(id)
+    - (id) -- Entity93(id)
+    struct:
+      data: name
+      id: int
+  Entity64:
+    relations:
+    - (id) -- Entity77(id)
+    struct:
+      data: name
+      id: int
+  Entity65:
+    relations:
+    - (id) -- Entity86(id)
+    struct:
+      data: name
+      id: int
+  Entity66:
+    relations:
+    - (id) -- Entity98(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity67:
+    relations:
+    - (id) -- Entity81(id)
+    struct:
+      data: name
+      id: int
+  Entity68:
+    relations:
+    - (id) -- Entity69(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity75(id)
+    - (id) -- Entity88(id)
+    - (id) -- Entity93(id)
+    struct:
+      data: name
+      id: int
+  Entity69:
+    relations:
+    - (id) -- Entity88(id)
+    - (id) -- Entity98(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity7:
+    relations:
+    - (id) -- Entity11(id)
+    - (id) -- Entity15(id)
+    - (id) -- Entity35(id)
+    - (id) -- Entity51(id)
+    - (id) -- Entity52(id)
+    - (id) -- Entity89(id)
+    struct:
+      data: name
+      id: int
+  Entity70:
+    relations:
+    - (id) -- Entity79(id)
+    - (id) -- Entity97(id)
+    struct:
+      data: name
+      id: int
+  Entity71:
+    relations:
+    - (id) -- Entity81(id)
+    - (id) -- Entity93(id)
+    - (id) -- Entity94(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity72:
+    relations:
+    - (id) -- Entity77(id)
+    - (id) -- Entity88(id)
+    - (id) -- Entity94(id)
+    - (id) -- Entity97(id)
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity73:
+    relations:
+    - (id) -- Entity81(id)
+    - (id) -- Entity90(id)
+    struct:
+      data: name
+      id: int
+  Entity74:
+    relations:
+    - (id) -- Entity88(id)
+    - (id) -- Entity91(id)
+    - (id) -- Entity95(id)
+    struct:
+      data: name
+      id: int
+  Entity75:
+    relations:
+    - (id) -- Entity81(id)
+    - (id) -- Entity98(id)
+    struct:
+      data: name
+      id: int
+  Entity76:
+    relations:
+    - (id) -- Entity83(id)
+    - (id) -- Entity89(id)
+    - (id) -- Entity92(id)
+    struct:
+      data: name
+      id: int
+  Entity77:
+    relations:
+    - (id) -- Entity84(id)
+    - (id) -- Entity92(id)
+    struct:
+      data: name
+      id: int
+  Entity78:
+    relations:
+    - (id) -- Entity87(id)
+    struct:
+      data: name
+      id: int
+  Entity79:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity8:
+    relations:
+    - (id) -- Entity16(id)
+    - (id) -- Entity29(id)
+    - (id) -- Entity37(id)
+    - (id) -- Entity54(id)
+    - (id) -- Entity57(id)
+    - (id) -- Entity61(id)
+    - (id) -- Entity63(id)
+    - (id) -- Entity66(id)
+    - (id) -- Entity67(id)
+    - (id) -- Entity89(id)
+    struct:
+      data: name
+      id: int
+  Entity80:
+    relations:
+    - (id) -- Entity81(id)
+    struct:
+      data: name
+      id: int
+  Entity81:
+    relations:
+    - (id) -- Entity82(id)
+    struct:
+      data: name
+      id: int
+  Entity82:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity83:
+    relations:
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity84:
+    relations:
+    - (id) -- Entity87(id)
+    struct:
+      data: name
+      id: int
+  Entity85:
+    relations:
+    - (id) -- Entity91(id)
+    - (id) -- Entity92(id)
+    - (id) -- Entity98(id)
+    struct:
+      data: name
+      id: int
+  Entity86:
+    relations:
+    - (id) -- Entity91(id)
+    - (id) -- Entity96(id)
+    struct:
+      data: name
+      id: int
+  Entity87:
+    relations:
+    - (id) -- Entity99(id)
+    struct:
+      data: name
+      id: int
+  Entity88:
+    relations:
+    - (id) -- Entity94(id)
+    struct:
+      data: name
+      id: int
+  Entity89:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity9:
+    relations:
+    - (id) -- Entity14(id)
+    - (id) -- Entity18(id)
+    - (id) -- Entity24(id)
+    - (id) -- Entity27(id)
+    - (id) -- Entity29(id)
+    - (id) -- Entity44(id)
+    - (id) -- Entity50(id)
+    - (id) -- Entity60(id)
+    - (id) -- Entity66(id)
+    - (id) -- Entity71(id)
+    - (id) -- Entity82(id)
+    - (id) -- Entity88(id)
+    struct:
+      data: name
+      id: int
+  Entity90:
+    relations:
+    - (id) -- Entity93(id)
+    - (id) -- Entity94(id)
+    struct:
+      data: name
+      id: int
+  Entity91:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity92:
+    relations:
+    - (id) -- Entity93(id)
+    struct:
+      data: name
+      id: int
+  Entity93:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity94:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity95:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity96:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity97:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity98:
+    relations: []
+    struct:
+      data: name
+      id: int
+  Entity99:
+    relations: []
+    struct:
+      data: name
+      id: int
