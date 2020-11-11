@@ -11,7 +11,7 @@ let private solveShortestPath (state: Dictionary<string, string list option>) (g
         | [] -> ()
         | x :: xs ->
             match List.lookup x graph with
-            | Option.None -> aux xs
+            | None -> aux xs
             | Some dists ->
                 let current = Option.unwrap state.[x]
                 let xs: string list =
@@ -19,7 +19,7 @@ let private solveShortestPath (state: Dictionary<string, string list option>) (g
                         (fun (acc: string list) (dist: string) ->
                             if state.ContainsKey dist then
                                 match state.[dist] with
-                                | Option.None ->
+                                | None ->
                                     state.[dist] <- Some (x :: current)
                                     dist :: acc
                                 | Some path ->
@@ -40,18 +40,18 @@ let private solveShortestPath (state: Dictionary<string, string list option>) (g
 let private longestPath (entityNames: string list) (graph: (string * string list) list): Path =
     List.fold (fun (acc: string list) entity ->
         let state = new Dictionary<string, string list option>()
-        List.iter (fun name -> state.Add(name, Option.None)) entityNames
+        List.iter (fun name -> state.Add(name, None)) entityNames
         state.[entity] <- Some []
         solveShortestPath state graph entity
         List.iter (fun key ->
             match state.[key] with
-            | Option.None -> ()
+            | None -> ()
             | Some path -> state.[key] <- Some (key :: path)) (List.ofSeq state.Keys)
         let max = List.maxOf (function
-            | Option.None -> 0
-            | Some xs -> List.length xs) Option.None (List.ofSeq state.Values)
+            | None -> 0
+            | Some xs -> List.length xs) None (List.ofSeq state.Values)
         match max with
-        | Option.None -> acc
+        | None -> acc
         | Some max when List.length acc > List.length max -> acc
         | Some max -> max
     ) [] entityNames
@@ -61,10 +61,10 @@ let private makeColumns (schema: Schema.T): string list list =
         List.fold (fun (acc: (string * string list) list) (entity: Entity) ->
             List.fold (fun (acc: (string * string list) list) (relation: Relation) ->
                 match List.findPop (fun (x, _) -> x = entity.Name) acc with
-                | Option.None, acc -> (entity.Name, [fst relation.Dist]) :: acc
+                | None, acc -> (entity.Name, [fst relation.Dist]) :: acc
                 | Some (_, dists), acc ->
                     match List.findPop ((=) (fst relation.Dist)) dists with
-                    | Some _, dists | Option.None, dists -> (entity.Name, fst relation.Dist :: dists) :: acc)
+                    | Some _, dists | None, dists -> (entity.Name, fst relation.Dist :: dists) :: acc)
                 acc
                 entity.Relations)
             []
@@ -86,7 +86,7 @@ let private solveShortestRowPath (state: int list option array) (graph: int list
                 List.fold
                     (fun (acc: int list) (dist: int) ->
                         match state.[dist] with
-                        | Option.None ->
+                        | None ->
                             state.[dist] <- Some (x :: current)
                             dist :: acc
                         | Some path ->
@@ -103,18 +103,18 @@ let private solveShortestRowPath (state: int list option array) (graph: int list
 
 let private longestRowPath (entityIndices: int list) (graph: int list array): int list =
     List.fold (fun (acc: int list) entity ->
-        let state: int list option array = Array.map (fun _ -> Option.None) graph
+        let state: int list option array = Array.map (fun _ -> None) graph
         state.[entity] <- Some []
         solveShortestRowPath state graph entity
         Array.iteri (fun idx path ->
             match path with
-            | Option.None -> ()
+            | None -> ()
             | Some path -> state.[idx] <- Some path) state
         let max = List.maxOf (function
-            | Option.None -> 0
-            | Some xs -> List.length xs) Option.None (List.ofSeq state)
+            | None -> 0
+            | Some xs -> List.length xs) None (List.ofSeq state)
         match max with
-        | Option.None -> acc
+        | None -> acc
         | Some max when List.length acc > List.length max -> acc
         | Some max -> max
     ) [] entityIndices

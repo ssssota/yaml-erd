@@ -41,7 +41,7 @@ let validateRelation (schema: Schema.T): Util.Warning list * Util.ErrorValue lis
                     ) accErrors relation.Src
             let accErrors =
                 match List.tryFind (fun entity -> entity.Name = fst relation.Dist) schema with
-                | Option.None ->
+                | None ->
                     let err = validateError <| String.Format("dist of relation {0} not found!", relation)
                     err :: accErrors
                 | Some distEntity ->

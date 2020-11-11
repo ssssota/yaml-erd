@@ -40,11 +40,11 @@ let private printEntity (entity: Entity): string =
 
 let private printRelationKind =
     function
-    | RelationKind.None -> "none"
-    | RelationKind.One -> "teetee"
-    | RelationKind.ZeroOrOne -> "teeodot"
-    | RelationKind.ZeroOrMore -> "icurveodot"
-    | RelationKind.OneOrMore -> "icurvetee"
+    | Unknown -> "none"
+    | One -> "teetee"
+    | ZeroOrOne -> "teeodot"
+    | ZeroOrMore -> "icurveodot"
+    | OneOrMore -> "icurvetee"
 
 let mutable private edgeInterCount = 0
 
@@ -104,7 +104,7 @@ let private printLayout (orders: string list list): string =
             let nodes =
                 List.fold (fun (acc: string list) (order: string list) ->
                     match List.tryNth order idx with
-                    | Option.None -> acc
+                    | None -> acc
                     | Some x -> x :: acc) [] orders
             if List.length nodes < 2 then ""
             else

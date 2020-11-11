@@ -45,14 +45,14 @@ and private parseScalar (node: YamlNode): Result<string> =
 
 let private parseRelationKind (node: YamlNode) (isLeft: bool) (str: string): Result<RelationKind> =
     match isLeft, str with
-    | _, "" -> Result.mkOk RelationKind.None
-    | _, "||" -> Result.mkOk RelationKind.One
+    | _, "" -> Result.mkOk Unknown
+    | _, "||" -> Result.mkOk One
     | true, "|o"
-    | false, "o|" -> Result.mkOk RelationKind.ZeroOrOne
+    | false, "o|" -> Result.mkOk ZeroOrOne
     | true, "}o"
-    | false, "o{" -> Result.mkOk RelationKind.ZeroOrMore
+    | false, "o{" -> Result.mkOk ZeroOrMore
     | true, "}|"
-    | false, "|{" -> Result.mkOk RelationKind.OneOrMore
+    | false, "|{" -> Result.mkOk OneOrMore
     | _, _ ->
         parseError node
         <| String.Format("{0} is not valid relation head", node.ToString())
