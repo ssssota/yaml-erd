@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Util.fs" />
+    <Compile Include="Graph.fs" />
     <Compile Include="Schema.fs" />
     <Compile Include="CalcOrder.fs" />
     <Compile Include="Print.fs" />
