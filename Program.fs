@@ -19,13 +19,13 @@ let main args =
       | Input path -> path, output
       | Output path -> input, path) ("", "./output.dot") <| (parser.Parse args).GetAllResults()
 
-    match Parse.schemaFromFile input |> Result.bind Validation.validate with
+    match Parse.schemaFromFile input |> Util.Result.bind Validation.validate with
     | Ok { Data = schema; Warnings = warnings } ->
-      List.iter (fun warning -> Printf.eprintfn "%s" <| warningToConsoleString warning) warnings;
+      List.iter (fun warning -> Printf.eprintfn "%s" <| warning.ToString()) warnings;
       Print.schemaToFile output schema
       0
     | Error errs ->
-      List.iter (fun err -> Printf.eprintfn "%s" <| errorToConsoleString err) errs
+      List.iter (fun err -> Printf.eprintfn "%s" <| err.ToString()) errs
       -1
   with
   | e ->

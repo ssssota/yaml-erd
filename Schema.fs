@@ -1,10 +1,11 @@
 module Schema
+open Util
 
 type Key = string
 
 type Struct =
-    | Scalar of string
-    | Record of (Key * Struct) list
+    | Scalar of string * Position
+    | Record of (Key * Struct) list * Position
 
 type RelationKind =
     | Unknown
@@ -16,11 +17,13 @@ type RelationKind =
 type Relation =
     { Src: string list
       Dist: string * string
-      Kind: RelationKind * RelationKind }
+      Kind: RelationKind * RelationKind
+      Pos: Position }
 
 type Entity =
     { Name: string
       Struct: (Key * Struct) list
-      Relations: Relation list }
+      Relations: Relation list
+      Pos: Position }
 
 type T = Entity list

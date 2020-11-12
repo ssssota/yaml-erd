@@ -1,0 +1,22 @@
+schema:
+  Entity0:
+    invalid: entity
+  Entity1:
+    struct:
+      id: InvalidType
+      name: string
+  Entity2:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "InvalidRelation"
+      - "(id) Invalid--Type Entity1(id)"
+      - "(id) -- Entity1(id)"
+  Entity3:
+    struct:
+      int: int
+      name: string
+    relations:
+      - "(id) -- Entity2(id)"
+

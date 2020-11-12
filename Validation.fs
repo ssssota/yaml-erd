@@ -4,31 +4,54 @@ open System
 open Util
 open Schema
 
+type ValidationWarning = Dummy
+
+type UnknownEntityError = {
+    Name: string
+    Pos: Position
+}
+type UnknownFieldError = {
+    EntityName: string
+    FieldName: string
+    Pos: Position
+}
+type MutualRelationError = {
+    EntityName1: string
+    FieldName1: string
+    RefPos1: Position
+    EntityName2: string
+    FieldName2: string
+    RefPos2: Position
+}
+type ValidationError =
+    | UnknownEntity of UnknownEntityError
+    | UnknownField of UnknownFieldError
+    | MutualRelations of MutualRelationError
+    override self.ToString() =
+        match self with
+        | UnknownEntity err ->
+            String.Format("\x1b[31m validation error[{0}:{1}-{2}:{3}]: \x1b[0m there is no entity named `{4}`", err.Pos.StartLine, err.Pos.StartColumn, err.Pos.EndLine, err.Pos.EndColumn, err.Name)
+        | UnknownField err ->
+            String.Format("\x1b[31m validation error[{0}:{1}-{2}:{3}]: \x1b[0m entity `{4}` does not have field `{5}`", err.Pos.StartLine, err.Pos.StartColumn, err.Pos.EndLine, err.Pos.EndColumn, err.EntityName, err.FieldName)
+        | MutualRelations err ->
+            String.Format(
+                "\x1b[31m validation error[{0}:{1}-{2}:{3} and {4}:{5}-{6}:{7}]: \x1b[0m mutual relations are detected. `{8}:{9}` <-> `{10}:{11}`",
+                err.RefPos1.StartLine, err.RefPos1.StartColumn, err.RefPos1.EndLine, err.RefPos1.EndColumn,
+                err.RefPos1.StartLine, err.RefPos1.StartColumn, err.RefPos1.EndLine, err.RefPos1.EndColumn,
+                err.EntityName1, err.FieldName1, err.EntityName2, err.FieldName2)
+
 let rec private hasStructField (strct: Struct) (field: string list): bool =
     match strct with
     | Scalar _ -> List.isEmpty field
-    | Record fields_ ->  not (List.isEmpty field) && List.exists (fun (key, v) -> key = field.Head && hasStructField v field.Tail) fields_
-
+    | Record (fields_, _) ->  not (List.isEmpty field) && List.exists (fun (key, v) -> key = field.Head && hasStructField v field.Tail) fields_
 
 let private hasEntityField (schema: Schema.T) (entityName: string) (field: string): bool =
-    List.fold (fun acc (entity: Entity) ->
-        acc
-        || entityName = entity.Name
-        && hasStructField
-           <| Record entity.Struct
-           <| Seq.toList (field.Split '.')) false schema
+    List.exists (fun (entity: Entity) ->
+        let field = Seq.toList (field.Split '.')
+        entityName = entity.Name && hasStructField <| Record (entity.Struct, entity.Pos) <| field
+    ) schema
 
-(* TODO *)
-
-let private validateError (msg: string): ErrorValue =
-    {
-        StartLine = 0
-        StartColumn = 0
-        EndLine = 0
-        EndColumn = 0
-        Message = msg }
-
-let validateRelation (schema: Schema.T): Util.Warning list * Util.ErrorValue list =
+let validateRelation (schema: Schema.T): obj list * obj list =
     List.fold (fun acc (entity: Entity) ->
         List.fold (fun (accWarnings, accErrors) (relation: Relation) ->
             let accErrors =
@@ -37,13 +60,16 @@ let validateRelation (schema: Schema.T): Util.Warning list * Util.ErrorValue lis
                         if hasEntityField schema entity.Name src then
                             acc
                         else
-                            (validateError <| String.Format("{0}.{1}", entity.Name, src)) :: acc
+                            UnknownField {EntityName = entity.Name; FieldName = src; Pos = relation.Pos} :> obj:: acc
                     ) accErrors relation.Src
             let accErrors =
-                match List.tryFind (fun entity -> entity.Name = fst relation.Dist) schema with
+                match List.tryFind (fun (entity: Entity) -> entity.Name = fst relation.Dist) schema with
                 | None ->
-                    let err = validateError <| String.Format("dist of relation {0} not found!", relation)
-                    err :: accErrors
+                    let err = UnknownEntity {
+                        Name = fst relation.Dist
+                        Pos = relation.Pos
+                    }
+                    err :> obj :: accErrors
                 | Some distEntity ->
                     let loopRelations =
                         List.filter (fun (distRelation: Relation) ->
@@ -53,16 +79,19 @@ let validateRelation (schema: Schema.T): Util.Warning list * Util.ErrorValue lis
                             distEntity.Relations
                     List.tryHead loopRelations
                         |> Option.map (fun relationRev ->
-                            String.Format(
-                                "loop relations found! {0}.{1} <-> {2}.{3}",
-                                fst relationRev.Dist, snd relationRev.Dist,
-                                fst relation.Dist, snd relation.Dist)
-                            |> validateError
+                            MutualRelations {
+                                EntityName1 = fst relationRev.Dist
+                                FieldName1 = snd relationRev.Dist
+                                RefPos1 = relationRev.Pos
+                                EntityName2 = fst relation.Dist
+                                FieldName2 = fst relation.Dist
+                                RefPos2 = relation.Pos
+                            } :> obj
                     )
                     |> List.appendOpt accErrors
             let accErrors =
                 if hasEntityField schema <| fst relation.Dist <| snd relation.Dist then accErrors
-                else (validateError <| String.Format("{0}.{1}", fst relation.Dist, snd relation.Dist)) :: accErrors
+                else UnknownField { EntityName = fst relation.Dist; FieldName = snd relation.Dist; Pos = relation.Pos} :> obj :: accErrors
             accWarnings, accErrors
         ) acc entity.Relations
     ) ([], []) schema

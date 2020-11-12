@@ -23,8 +23,8 @@ let private printRecord =
                 <| if prefix = "" then key else prefix + "__" + key
 
             match strct with
-            | Scalar v -> String.Format("""<tr><td port="{1}" align="left">{0}{2}: {3}</td></tr>""", indent, prefix, key, v)
-            | Record fields ->
+            | Scalar (v, _) -> String.Format("""<tr><td port="{1}" align="left">{0}{2}: {3}</td></tr>""", indent, prefix, key, v)
+            | Record (fields, _) ->
                 let after = aux (indent + "　") prefix fields
                 String.Format("""    <tr><td port="{1}" align="left">{0}{2}: </td></tr>""", indent, prefix, key) + after) record
         |> String.concat "\n        "

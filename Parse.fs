@@ -8,40 +8,55 @@ open YamlDotNet.RepresentationModel
 open Util
 open Schema
 
+type ParseWarning =
+    {
+        Pos: Position
+        Message: string
+    }
+    override self.ToString() =
+        String.Format("\x1b[33m parse warning[{0}:{1}-{2}:{3}]: \x1b[0m {4}", self.Pos.StartLine, self.Pos.StartColumn, self.Pos.EndLine, self.Pos.EndColumn, self.Message)
+
+type ParseError =
+    {
+        Pos: Position
+        Message: string
+    }
+    override self.ToString() =
+        String.Format("\x1b[31m parse error[{0}:{1}-{2}:{3}]: \x1b[0m {4}", self.Pos.StartLine, self.Pos.StartColumn, self.Pos.EndLine, self.Pos.EndColumn, self.Message)
+
+let private positionOfNode (node: YamlNode): Position =
+    {
+        StartLine = node.Start.Line
+        StartColumn = node.Start.Column
+        EndLine = node.End.Line
+        EndColumn = node.End.Column
+    }
+
 let private parseError (node: YamlNode) (msg: string): Result<'a> =
-    Error [ { StartLine = node.Start.Line
-              StartColumn = node.Start.Column
-              EndLine = node.End.Line
-              EndColumn = node.End.Column
-              Message = msg } ]
+    Error [
+        {
+            Pos = positionOfNode node
+            Message = msg
+        }
+    ]
 
 let rec private parseStruct (node: YamlNode): Result<Struct> =
     match node with
-    | :? YamlMappingNode as recordNode -> parseRecord recordNode |> Result.mapOk Record
-    | :? YamlScalarNode as scalarNode -> parseScalar scalarNode |> Result.mapOk Scalar
-    | _ ->
-        parseError node
-        <| String.Format("{0} must be mapping node or scalar node", node.ToString())
+    | :? YamlMappingNode as recordNode -> parseRecord recordNode |> Result.mapOk (fun x -> Record (x, positionOfNode node))
+    | :? YamlScalarNode as scalarNode -> parseStructLeaf scalarNode |> Result.mapOk (fun x -> Scalar (x, positionOfNode node))
+    | _ -> parseError node "struct node must be either mapping or scalar"
 
-and private parseRecord (node: YamlNode): Result<(Key * Struct) list> =
-    match node with
-    | :? YamlMappingNode as recordYaml ->
-        Seq.fold (fun acc key ->
-            let key: YamlScalarNode = downcast box key
-            let strct = parseStruct recordYaml.Children.[key]
-            Result.merge (fun acc strct -> (key.ToString(), strct) :: acc) acc strct)
-        <| Result.mkOk []
-        <| Seq.rev recordYaml.Children.Keys
-    | _ ->
-        parseError node
-        <| String.Format("{0} must be mapping node", node.ToString())
+and private parseRecord (node: YamlMappingNode): Result<(Key * Struct) list> =
+    Seq.fold (fun acc key ->
+        let key: YamlScalarNode = downcast box key
+        let strct = parseStruct node.Children.[key]
+        Result.merge (fun acc strct -> (key.ToString(), strct) :: acc) acc strct)
+    <| Result.mkOk []
+    <| Seq.rev node.Children.Keys
 
-and private parseScalar (node: YamlNode): Result<string> =
-    match node with
-    | :? YamlScalarNode as scalarNode -> Result.mkOk scalarNode.Value
-    | _ ->
-        parseError node
-        <| String.Format("{0} must be scalar node", node.ToString())
+and private parseStructLeaf (node: YamlScalarNode): Result<string> =
+    if node.Value = "int" || node.Value = "string" then Result.mkOk node.Value
+    else parseError node <| String.Format("""type must be either `int` or `string`, but `{0}` was given""", node.Value)
 
 let private parseRelationKind (node: YamlNode) (isLeft: bool) (str: string): Result<RelationKind> =
     match isLeft, str with
@@ -55,15 +70,13 @@ let private parseRelationKind (node: YamlNode) (isLeft: bool) (str: string): Res
     | false, "|{" -> Result.mkOk OneOrMore
     | _, _ ->
         parseError node
-        <| String.Format("{0} is not valid relation head", node.ToString())
+        <| String.Format("`{0}` is not valid relation head", str)
 
 let private parseRelation (node: YamlNode): Result<Relation> =
     let node =
         match node with
         | :? YamlScalarNode as relationNode -> Result.mkOk relationNode
-        | _ ->
-            parseError node
-            <| String.Format("{} must be a scalar node", node.ToString())
+        | _ -> parseError node "relation node must be scalar"
 
     node
     |> Result.bind (fun relationNode ->
@@ -76,7 +89,7 @@ let private parseRelation (node: YamlNode): Result<Relation> =
             Result.mkOk (m, relationNode)
         else
             parseError relationNode
-            <| String.Format("`{0}` is not acceptable as relation", node.ToString()))
+            <| String.Format("`{0}` is not acceptable as relation", relationNode.Value))
     |> Result.bind (fun (m, node) ->
         let srcHead = m.Groups.["src"].Value
 
@@ -93,7 +106,8 @@ let private parseRelation (node: YamlNode): Result<Relation> =
         Result.merge (fun kindLeft kindRight ->
             { Src = srcHead :: srcTails
               Dist = m.Groups.["distEntity"].Value, m.Groups.["distField"].Value
-              Kind = kindLeft, kindRight }) kindLeft kindRight)
+              Kind = kindLeft, kindRight
+              Pos = positionOfNode node}) kindLeft kindRight)
 
 let private parseEntity (name: string) (node: YamlNode): Result<Entity> =
     match node with
@@ -113,16 +127,21 @@ let private parseEntity (name: string) (node: YamlNode): Result<Entity> =
                 Result.mkOk []
 
         let record =
-            parseRecord node.[YamlScalarNode("struct")]
+            if node.Children.ContainsKey(YamlScalarNode("struct")) then
+                match node.[YamlScalarNode("struct")] with
+                | :? YamlMappingNode as structNode -> parseRecord structNode
+                | _ -> parseError node "struct node must be mapping"
+            else
+                parseError node <| String.Format("entity `{0}` must have `struct` data", name)
 
         Result.merge (fun relations strct ->
             { Name = name
               Struct = strct
-              Relations = relations }) relations record
+              Relations = relations
+              Pos = positionOfNode node}) relations record
 
     | _ ->
-        parseError node
-        <| String.Format("{0} must be a mapping node", node.ToString())
+        parseError node "entity node must be a mapping node"
 
 let private parseSchema (node: YamlNode) =
     match node with
