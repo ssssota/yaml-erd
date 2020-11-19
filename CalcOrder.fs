@@ -26,7 +26,8 @@ let private makeRows (schema: Schema.T) (rows: string list array): string list l
                 let entity = List.find (fun entity -> entity.Name = entityName) schema
                 List.fold (fun graph relation ->
                     let distIdx = Array.findIndex (List.contains (fst relation.Dist)) rows
-                    Graph.add (srcIdx, distIdx) graph
+                    if srcIdx = distIdx then graph
+                    else Graph.add (srcIdx, distIdx) graph
                 ) graph entity.Relations
             ) graph row, (srcIdx+1)
         ) (Graph.empty<int>, 0) rows |> fst
