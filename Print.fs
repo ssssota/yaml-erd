@@ -48,21 +48,40 @@ let private printRelationKind =
 
 let mutable private edgeInterCount = 0
 
-let private printEdges edges =
+let private isOrderContained (order: string list list) (edge: Edge) =
+    let src = List.map fst edge.Src
+    let rec aux: string list list -> bool = function
+    | [] -> false
+    | (hd :: tl) :: xs ->
+        let ok =
+            List.fold
+                (fun (prev, acc) (x: string) ->
+                   if acc then (x, true)
+                   else if  List.contains prev src && fst edge.Dist = x then (x, true)
+                   else (x, false)
+                )
+                (hd, false)
+                tl
+            |> snd
+        ok || aux xs
+    | _ :: xs -> aux xs
+    aux order
+
+let private printEdges order edges =
     let printEdge (accEdges, accInterNodes) edge =
+        let isConstraint = if isOrderContained order edge then "" else ", constraint = false"
         let arrowhead = printRelationKind <| snd edge.Kind
         let arrowtail = printRelationKind <| fst edge.Kind
         if edge.Src.Length = 1 then
             let src = edge.Src.[0]
             let newEdge =
                 String.Format(
-                    "  {0}:{1} -> {2}:{3} [arrowhead = {4}, arrowtail = {5}, constraint = false, dir = both];",
+                    "  {0} -> {1} [arrowhead = {2}, arrowtail = {3}{4}, dir = both];",
                     makeValidLabel <| fst src,
-                    makeValidLabel <| snd src,
                     makeValidLabel <| fst edge.Dist,
-                    makeValidLabel <| snd edge.Dist,
                     arrowhead,
-                    arrowtail)
+                    arrowtail,
+                    isConstraint)
             newEdge :: accEdges, accInterNodes
         else
             let intermediate =
@@ -71,18 +90,18 @@ let private printEdges edges =
             edgeInterCount <- edgeInterCount + 1
             let firstHalfEdge =
                 String.Format(
-                    "  {0} -> {1}:{2} [arrowhead = {3}, constraint = false, dir = forward];",
+                    "  {0} -> {1} [arrowhead = {2}, splines=false{3}, dir = forward];",
                     intermediate,
                     makeValidLabel <| fst edge.Dist,
-                    makeValidLabel <| snd edge.Dist,
-                    arrowhead)
+                    arrowhead,
+                    isConstraint)
             let edges = firstHalfEdge :: List.fold (fun acc src ->
                 String.Format(
-                    "  {0}:{1} -> {2} [arrowtail = {3}, constraint = false, dir = back];",
+                    "  {0} -> {1} [arrowtail = {2}, splines=false{3}, dir = back];",
                     makeValidLabel <| fst src,
-                    makeValidLabel <| snd src,
                     intermediate,
-                    arrowtail) :: acc) accEdges edge.Src
+                    arrowtail,
+                    isConstraint) :: acc) accEdges edge.Src
 
             let interNode =
                 String.Format("  {0} [shape = point, width = 0.01 height = 0.01];", intermediate)
@@ -93,11 +112,6 @@ let private printEdges edges =
 
 let private printLayout (orders: string list list): string =
     let ranks = List.map (fun order -> String.Format("""  {{rank = same; {0} }}""", String.concat "; " order)) orders |> String.concat "\n"
-    let lineEdges =
-        List.map (fun order ->
-            if List.length order < 2 then ""
-            else String.Format("""  {0} [style = "invis"]""", String.concat " -> " order)
-        ) orders |> String.concat "\n"
     let maxLength = List.fold (fun acc order -> max acc <| List.length order) 0 orders
     let dummyEdge: string list =
         List.map (fun idx ->
@@ -112,18 +126,18 @@ let private printLayout (orders: string list list): string =
                 String.Format("""  {0} [style = "invis"]""", edge)
         ) (List.ofSeq <| seq{ 0..maxLength })
 
-    ranks + "\n" + lineEdges + "\n" + (String.concat "\n" dummyEdge)
+    ranks + "\n" + (String.concat "\n" dummyEdge)
 
 let private printSchema schema: string =
     let nodes = List.map printEntity schema |> String.concat "\n"
+    let order = calcOrder schema
     let edges = List.fold (fun acc (entity: Entity) ->
             List.fold (fun acc (relation: Relation) ->
                 { Src = List.map (fun src -> entity.Name, src) relation.Src
                   Dist = relation.Dist
                   Kind = relation.Kind }
                 :: acc) acc entity.Relations) [] schema
-    let edges, interNodes = printEdges edges
-    let order = calcOrder schema
+    let edges, interNodes = printEdges order edges
     let layout = printLayout order
 
     String.Format
@@ -150,8 +164,8 @@ digraph Schema {{
 """,
          nodes,
          interNodes |> String.concat "\n",
-         layout,
-         edges |> String.concat "\n")
+         edges |> String.concat "\n",
+         layout)
 
 let schemaToFile (filename: string) schema =
     let content = printSchema schema
