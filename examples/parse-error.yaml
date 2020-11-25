@@ -3,7 +3,7 @@ schema:
     invalid: entity
   Entity1:
     struct:
-      id: InvalidType
+      id: int
       name: string
   Entity2:
     struct:

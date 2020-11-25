@@ -54,9 +54,7 @@ and private parseRecord (node: YamlMappingNode): Result<(Key * Struct) list> =
     <| Result.mkOk []
     <| Seq.rev node.Children.Keys
 
-and private parseStructLeaf (node: YamlScalarNode): Result<string> =
-    if node.Value = "int" || node.Value = "string" then Result.mkOk node.Value
-    else parseError node <| String.Format("""type must be either `int` or `string`, but `{0}` was given""", node.Value)
+and private parseStructLeaf (node: YamlScalarNode): Result<string> = Result.mkOk node.Value
 
 let private parseRelationKind (node: YamlNode) (isLeft: bool) (str: string): Result<RelationKind> =
     match isLeft, str with
