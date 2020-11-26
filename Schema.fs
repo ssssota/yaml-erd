@@ -16,7 +16,7 @@ type RelationKind =
 
 type Relation =
     { Src: string list
-      Dist: string * string
+      Dist: string * string list
       Kind: RelationKind * RelationKind
       Pos: Position }
 

@@ -80,7 +80,7 @@ let private parseRelation (node: YamlNode): Result<Relation> =
     |> Result.bind (fun relationNode ->
         let regex =
             Regex
-                ("^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) (?<kindLeft>.*?)--(?<kindRight>.*?) (?<distEntity>.+?)\\((?<distField>.+?)\\)$")
+                ("^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) (?<kindLeft>.*?)--(?<kindRight>.*?) (?<distEntity>.+?)\\((?<distField>.+?)(, (?<distFieldTail>.+?))*\\)$")
 
         let m = regex.Match(relationNode.Value)
         if m.Success then
@@ -94,6 +94,14 @@ let private parseRelation (node: YamlNode): Result<Relation> =
         let srcTails =
             Seq.map (fun (capture: Capture) -> capture.Value) m.Groups.["srcTail"].Captures
             |> Seq.toList
+        let src = srcHead :: srcTails
+
+        let distEntity = m.Groups.["distEntity"].Value
+        let distFieldHead = m.Groups.["distField"].Value
+        let distFieldTails =
+            Seq.map (fun (capture: Capture) -> capture.Value) m.Groups.["distFieldTail"].Captures
+            |> Seq.toList
+        let dist = distEntity, distFieldHead :: distFieldTails
 
         let kindLeft =
             parseRelationKind node true m.Groups.["kindLeft"].Value
@@ -102,8 +110,8 @@ let private parseRelation (node: YamlNode): Result<Relation> =
             parseRelationKind node false m.Groups.["kindRight"].Value
 
         Result.merge (fun kindLeft kindRight ->
-            { Src = srcHead :: srcTails
-              Dist = m.Groups.["distEntity"].Value, m.Groups.["distField"].Value
+            { Src = src
+              Dist = dist
               Kind = kindLeft, kindRight
               Pos = positionOfNode node}) kindLeft kindRight)
 

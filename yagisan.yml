@@ -1,0 +1,108 @@
+schema:
+  Tenant:
+    struct:
+      id: string
+      pkey: TenantPKey
+      tenant:
+        name: string
+        displayName: String
+  User:
+    struct:
+      id: string
+      pkey: UserPKey
+      tenantId: string
+      user:
+        name: string
+        displayName: string
+        ?email: string
+    relations:
+      - (tenantId) }o--|| Tenant(id)
+  UserPassword:
+    struct:
+      id: string
+      pkey: UserPKey
+      tenantId: string
+      userPassword:
+        userId: string
+        password: string
+    relations:
+      - (userPassword.userId, pkey) |o--|| User(id, pkey)
+  ApiClient:
+    struct:
+      id: string
+      pkey: ApiClientPKey
+      tenantId: string
+      apiClient:
+        displayName: string
+    relations:
+      - (tenantId) }o--|| Tenant(id)
+  ApiClientSecret:
+    struct:
+      id: string
+      pkey: ApiClientPKey
+      tenantId: string
+      apiClientSecret:
+        apiClientId: string
+        secret: string
+    relations:
+      - (apiClientSecret.apiClientId, pkey) |o--|| ApiClient(id, pkey)
+  App:
+    struct:
+      id: string
+      tenantId: string
+      pkey: AppPKey
+      app:
+        displayName: string
+    relations:
+      - (tenantId) }o--|| Tenant(id)
+  Record:
+    struct:
+      id: string
+      pkey: RecordPKey
+      tenantId: string
+      record:
+        appId: string
+        statusCode: string
+        data: any
+        ?reportFiles: Array<string>
+    relations:
+      - (record.appId) }o--|| App(id)
+  Order:
+    struct:
+      id: string
+      pkey: RecordPKey
+      tenantId: string
+      order:
+        appId: string
+        recordId: string
+        files: Array<string>
+        ?postalMail:
+          provider: PostalProvider
+          subject: string
+          sender:
+            postalCode: string
+            address1: string
+            ?address2: string
+            ?address3: string
+            name1: string
+            ?name2: string
+            ?name3: string
+            ?tel: string
+          recipient:
+            postalCode: string
+            address1: string
+            ?address2: string
+            name1: string
+            ?name2: string
+            ?name3: string
+            ?name4: string
+            ?title: string
+            ?note1: string
+            ?note2: string
+          ?canceledAt: Timestamp
+          ?nexwayStatus:
+            nexwayId: string
+            acceptedAt: Timestamp
+            ?sendedAt: string
+    relations:
+      - (order.recordId, pkey) }o--|| Record(id, pkey)

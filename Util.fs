@@ -92,3 +92,12 @@ module List =
         | x :: xs ->
             if i = 0 then Some x
             else tryNth xs (i-1)
+
+    let filterMap<'a, 'b> (f: 'a -> 'b option) (xs: 'a list): 'b list =
+        let rec aux acc = function
+        | [] -> acc
+        | x :: xs ->
+            match f x with
+            | None -> aux acc xs
+            | Some x -> aux (x :: acc) xs
+        aux [] xs

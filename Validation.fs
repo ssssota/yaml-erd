@@ -60,8 +60,14 @@ let validateRelation (schema: Schema.T): obj list * obj list =
                         if hasEntityField schema entity.Name src then
                             acc
                         else
-                            UnknownField {EntityName = entity.Name; FieldName = src; Pos = relation.Pos} :> obj:: acc
+                            UnknownField {EntityName = entity.Name; FieldName = src; Pos = relation.Pos} :> obj :: acc
                     ) accErrors relation.Src
+            let accErrors =
+                List.fold
+                    (fun acc distField ->
+                        let distEntity = fst relation.Dist
+                        if hasEntityField schema distEntity distField then acc
+                        else UnknownField { EntityName = distEntity; FieldName = distField; Pos = relation.Pos} :> obj :: acc) accErrors (snd relation.Dist)
             let accErrors =
                 match List.tryFind (fun (entity: Entity) -> entity.Name = fst relation.Dist) schema with
                 | None ->
@@ -71,27 +77,29 @@ let validateRelation (schema: Schema.T): obj list * obj list =
                     }
                     err :> obj :: accErrors
                 | Some distEntity ->
-                    let loopRelations =
-                        List.filter (fun (distRelation: Relation) ->
-                            fst distRelation.Dist = entity.Name
-                            && List.contains (snd distRelation.Dist) relation.Src
-                            && List.contains (snd relation.Dist) distRelation.Src)
-                            distEntity.Relations
-                    List.tryHead loopRelations
-                        |> Option.map (fun relationRev ->
-                            MutualRelations {
-                                EntityName1 = fst relationRev.Dist
-                                FieldName1 = snd relationRev.Dist
-                                RefPos1 = relationRev.Pos
-                                EntityName2 = fst relation.Dist
-                                FieldName2 = fst relation.Dist
-                                RefPos2 = relation.Pos
-                            } :> obj
-                    )
+                    List.fold
+                        (fun (acc: obj option) distRelation ->
+                            match acc with
+                            | Some x -> Some x
+                            | None ->
+                                if fst distRelation.Dist <> entity.Name then None
+                                else
+                                    let forward = List.tryFind (fun dist -> List.contains dist distRelation.Src) (snd relation.Dist)
+                                    let backward = List.tryFind (fun dist -> List.contains dist relation.Src) (snd distRelation.Dist)
+                                    match forward, backward with
+                                    | Some(forward), Some(backward) -> Some( MutualRelations {
+                                        EntityName1 = entity.Name
+                                        FieldName1 = backward
+                                        RefPos1 = distRelation.Pos
+                                        EntityName2 = distEntity.Name
+                                        FieldName2 = forward
+                                        RefPos2 = relation.Pos
+                                    } :> obj)
+                                    | _, _ -> None
+                        )
+                        None
+                        distEntity.Relations
                     |> List.appendOpt accErrors
-            let accErrors =
-                if hasEntityField schema <| fst relation.Dist <| snd relation.Dist then accErrors
-                else UnknownField { EntityName = fst relation.Dist; FieldName = snd relation.Dist; Pos = relation.Pos} :> obj :: accErrors
             accWarnings, accErrors
         ) acc entity.Relations
     ) ([], []) schema
