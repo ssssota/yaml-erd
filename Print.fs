@@ -8,7 +8,7 @@ open Schema
 open CalcOrder
 
 type private Edge =
-    { Src: (string * string) list
+    { Src: string * string list
       Dist: string * string list
       Kind: RelationKind * RelationKind }
 
@@ -50,7 +50,7 @@ let private printRelationKind =
 let mutable private edgeInterCount = 0
 
 let private isOrderContained (order: string list list) (edge: Edge) =
-    let src = List.map fst edge.Src
+    let src = fst edge.Src
     let rec aux: string list list -> bool = function
     | [] -> false
     | (hd :: tl) :: xs ->
@@ -58,7 +58,7 @@ let private isOrderContained (order: string list list) (edge: Edge) =
             List.fold
                 (fun (prev, acc) (x: string) ->
                    if acc then (x, true)
-                   else if  List.contains prev src && fst edge.Dist = x then (x, true)
+                   else if  prev = src && fst edge.Dist = x then (x, true)
                    else (x, false)
                 )
                 (hd, false)
@@ -69,46 +69,25 @@ let private isOrderContained (order: string list list) (edge: Edge) =
     aux order
 
 let private printEdges order edges =
-    let printEdge (accEdges, accInterNodes) edge =
+    (* let verticalDummyEdge: (string * string) =
+      let maxLength = List.fold (fun acc order -> max acc <| List.length order) 0 order
+      List.fold (fun acc idx ->
+        List.fold (fun acc order -> ) acc order
+      ) [] (seq {0..maxLength} |> List.ofSeq) *)
+    let printEdge accEdges edge =
         let isConstraint = if isOrderContained order edge then "" else ", constraint = false"
         let arrowhead = printRelationKind <| snd edge.Kind
         let arrowtail = printRelationKind <| fst edge.Kind
-        if edge.Src.Length = 1 then
-            let src = edge.Src.[0]
-            let newEdge =
-                String.Format(
-                    "  {0} -> {1} [arrowhead = {2}, arrowtail = {3}{4}, dir = both];",
-                    makeValidLabel <| fst src,
-                    makeValidLabel <| fst edge.Dist,
-                    arrowhead,
-                    arrowtail,
-                    isConstraint)
-            newEdge :: accEdges, accInterNodes
-        else
-            let intermediate =
-                String.Format("__intermediate{0}__", edgeInterCount)
-
-            edgeInterCount <- edgeInterCount + 1
-            let firstHalfEdge =
-                String.Format(
-                    "  {0} -> {1} [arrowhead = {2}, splines=false{3}, dir = forward];",
-                    intermediate,
-                    makeValidLabel <| fst edge.Dist,
-                    arrowhead,
-                    isConstraint)
-            let edges = firstHalfEdge :: List.fold (fun acc src ->
-                String.Format(
-                    "  {0} -> {1} [arrowtail = {2}, splines=false{3}, dir = back];",
-                    makeValidLabel <| fst src,
-                    intermediate,
-                    arrowtail,
-                    isConstraint) :: acc) accEdges edge.Src
-
-            let interNode =
-                String.Format("  {0} [shape = point, width = 0.01 height = 0.01];", intermediate)
-
-            edges, interNode :: accInterNodes
-    List.fold printEdge ([], []) edges
+        let newEdge =
+            String.Format(
+                "  {0} -> {1} [arrowhead = {2}, arrowtail = {3}{4}, dir = both];",
+                makeValidLabel <| fst edge.Src,
+                makeValidLabel <| fst edge.Dist,
+                arrowhead,
+                arrowtail,
+                isConstraint)
+        newEdge :: accEdges
+    List.fold printEdge [] edges
 
 
 let private printLayout (orders: string list list): string =
@@ -134,11 +113,11 @@ let private printSchema schema: string =
     let order = calcOrder schema
     let edges = List.fold (fun acc (entity: Entity) ->
             List.fold (fun acc (relation: Relation) ->
-                { Src = List.map (fun src -> entity.Name, src) relation.Src
+                { Src = entity.Name, relation.Src
                   Dist = relation.Dist
                   Kind = relation.Kind }
                 :: acc) acc entity.Relations) [] schema
-    let edges, interNodes = printEdges order edges
+    let edges = printEdges order edges
     let layout = printLayout order
 
     String.Format
@@ -158,13 +137,11 @@ digraph Schema {{
 
 {0}
 {1}
-{2}
 
-{3}
+{2}
 }}
 """,
          nodes,
-         interNodes |> String.concat "\n",
          edges |> String.concat "\n",
          layout)
 

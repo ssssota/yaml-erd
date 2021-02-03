@@ -15,7 +15,7 @@ let private makeColumns (schema: Schema.T): string list list =
     let rec aux acc entityNames =
         let longest = Graph.longestPath entityNames graph
         if List.isEmpty longest then acc
-        else aux (List.rev longest :: acc) <| List.minus entityNames longest
+        else aux (longest :: acc) <| List.minus entityNames longest
     aux [] <| List.map (fun entity -> entity.Name) schema |> List.rev
 
 
@@ -41,6 +41,7 @@ let private makeRows (schema: Schema.T) (rows: string list array): string list l
             rows.[idx] :: acc
         ) acc indices
     ) [] indices
+    |> List.rev
 
 
 let calcOrder (schema: Schema.T): string list list =
