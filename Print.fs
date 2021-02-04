@@ -7,10 +7,16 @@ open Util
 open Schema
 open CalcOrder
 
-type private Edge =
-    { Src: string * string list
-      Dist: string * string list
-      Kind: RelationKind * RelationKind }
+type private RelationEdge =
+    { Src: string;
+      Dist: string;
+      HeadKind: RelationKind;
+      TailKind: RelationKind;
+      IsConstraint: bool; }
+
+type private LayoutEdge =
+    { Src: string;
+      Dist: string; }
 
 let private makeValidLabel (str: string) =
     str.Replace(".", "__").Replace("-", "__").Replace("<", "&#12296;").Replace(">", "&#12297;")
@@ -47,78 +53,59 @@ let private printRelationKind =
     | ZeroOrMore -> "icurveodot"
     | OneOrMore -> "icurvetee"
 
-let mutable private edgeInterCount = 0
-
-let private isOrderContained (order: string list list) (edge: Edge) =
-    let src = fst edge.Src
-    let rec aux: string list list -> bool = function
-    | [] -> false
-    | (hd :: tl) :: xs ->
-        let ok =
-            List.fold
-                (fun (prev, acc) (x: string) ->
-                   if acc then (x, true)
-                   else if  prev = src && fst edge.Dist = x then (x, true)
-                   else (x, false)
-                )
-                (hd, false)
-                tl
-            |> snd
-        ok || aux xs
-    | _ :: xs -> aux xs
-    aux order
-
-let private printEdges order edges =
-    (* let verticalDummyEdge: (string * string) =
-      let maxLength = List.fold (fun acc order -> max acc <| List.length order) 0 order
-      List.fold (fun acc idx ->
-        List.fold (fun acc order -> ) acc order
-      ) [] (seq {0..maxLength} |> List.ofSeq) *)
-    let printEdge accEdges edge =
-        let isConstraint = if isOrderContained order edge then "" else ", constraint = false"
-        let arrowhead = printRelationKind <| snd edge.Kind
-        let arrowtail = printRelationKind <| fst edge.Kind
-        let newEdge =
-            String.Format(
-                "  {0} -> {1} [arrowhead = {2}, arrowtail = {3}{4}, dir = both];",
-                makeValidLabel <| fst edge.Src,
-                makeValidLabel <| fst edge.Dist,
-                arrowhead,
-                arrowtail,
-                isConstraint)
-        newEdge :: accEdges
-    List.fold printEdge [] edges
-
-
-let private printLayout (orders: string list list): string =
+let private calcLayoutEdges (orders: string list list): string * LayoutEdge list =
     let ranks = List.map (fun order -> String.Format("""  {{rank = same; {0} }}""", String.concat "; " order)) orders |> String.concat "\n"
     let maxLength = List.fold (fun acc order -> max acc <| List.length order) 0 orders
-    let dummyEdge: string list =
-        List.map (fun idx ->
+    let layoutEdges: LayoutEdge list =
+        List.fold (fun accEdges idx ->
             let nodes =
-                List.fold (fun (acc: string list) (order: string list) ->
+                List.fold (fun (accNodes: string list) (order: string list) ->
                     match List.tryNth order idx with
-                    | None -> acc
-                    | Some x -> x :: acc) [] orders
-            if List.length nodes < 2 then ""
+                    | None -> accNodes
+                    | Some x -> x :: accNodes) [] orders
+            if List.length nodes < 2 then accEdges
             else
-                let edge: string = nodes |> String.concat " -> "
-                String.Format("""  {0} [style = "invis"]""", edge)
-        ) (List.ofSeq <| seq{ 0..maxLength })
+                List.fold (fun (accEdges, prev) (node: string) ->
+                    ({Src=prev; Dist=node} :: accEdges), node
+                ) (accEdges, nodes.Head) (nodes.Tail) |> fst
+        ) [] (List.ofSeq <| seq{ 0..maxLength })
+    ranks, layoutEdges
 
-    ranks + "\n" + (String.concat "\n" dummyEdge)
+let private calcEdges layoutEdges schema =
+    List.fold (fun (acc, layoutEdges) (entity: Entity) ->
+        List.fold (fun (acc, layoutEdges) (relation: Relation) ->
+            let src = entity.Name
+            let dist = fst relation.Dist
+            let existsLayout = fun (layoutEdge: LayoutEdge) -> layoutEdge.Src = src && layoutEdge.Dist = dist || layoutEdge.Src = dist && layoutEdge.Dist = src
+            match List.findPop existsLayout layoutEdges with
+            | None, layoutEdges ->
+                let newEdge = {Src=entity.Name; Dist=fst relation.Dist; HeadKind=fst relation.Kind; TailKind=snd relation.Kind; IsConstraint=false}
+                newEdge :: acc, layoutEdges
+            | Some(_), layoutEdges ->
+                let newEdge = {Src=entity.Name; Dist=fst relation.Dist; HeadKind=fst relation.Kind; TailKind=snd relation.Kind; IsConstraint=true}
+                newEdge :: acc, layoutEdges
+        ) (acc, layoutEdges) entity.Relations
+    ) ([], layoutEdges) schema
+
+let private printRelationEdge relationEdge =
+    let arrowhead = printRelationKind relationEdge.HeadKind
+    let arrowtail = printRelationKind relationEdge.TailKind
+    String.Format(
+        """  {0} -> {1} [arrowhead = {2}, arrowtail = {3}, constraint = {4}, dir = both]""",
+        relationEdge.Src,
+        relationEdge.Dist,
+        arrowhead,
+        arrowtail,
+        if relationEdge.IsConstraint then "true" else "false")
+
+let private printLayoutEdge layoutEdge =
+    String.Format("""  {0} -> {1} [style = "invis"]""", layoutEdge.Src, layoutEdge.Dist)
 
 let private printSchema schema: string =
     let nodes = List.map printEntity schema |> String.concat "\n"
     let order = calcOrder schema
-    let edges = List.fold (fun acc (entity: Entity) ->
-            List.fold (fun acc (relation: Relation) ->
-                { Src = entity.Name, relation.Src
-                  Dist = relation.Dist
-                  Kind = relation.Kind }
-                :: acc) acc entity.Relations) [] schema
-    let edges = printEdges order edges
-    let layout = printLayout order
+    let (layout, layoutEdges) = calcLayoutEdges order
+    let (edges, layoutEdges) = calcEdges layoutEdges schema
 
     String.Format
         ("""
@@ -137,13 +124,14 @@ digraph Schema {{
 
 {0}
 {1}
-
 {2}
+{3}
 }}
 """,
          nodes,
-         edges |> String.concat "\n",
-         layout)
+         layout,
+         layoutEdges |> List.map printLayoutEdge |> String.concat "\n",
+         edges |> List.map printRelationEdge |> String.concat "\n")
 
 let schemaToFile (filename: string) schema =
     let content = printSchema schema
