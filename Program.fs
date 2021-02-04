@@ -5,12 +5,7 @@ open Argu
 
 let private compile input output =
   let args = String.Format("-Tpng {0} -o {1}", input, output)
-  let procStartInfo = ProcessStartInfo(
-    FileName = "dot",
-    Arguments = args,
-    WorkingDirectory = ".",
-    UseShellExecute = false
-  )
+  let procStartInfo = ProcessStartInfo(FileName = "dot", Arguments = args, WorkingDirectory = ".", UseShellExecute = false)
   let ps = new Process(StartInfo = procStartInfo)
   ps.Start() |> ignore
   ps.WaitForExit()
@@ -25,7 +20,7 @@ type Arguments =
         match s with
         | Input _ -> "input yaml filename"
         | Temp _ -> "temporal dot filename"
-        | Output _ -> "output pdf filename"
+        | Output _ -> "output png filename"
 
 [<EntryPoint>]
 let main args =

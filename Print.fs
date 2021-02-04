@@ -74,16 +74,18 @@ let private calcLayoutEdges (orders: string list list): string * LayoutEdge list
 let private calcEdges layoutEdges schema =
     List.fold (fun (acc, layoutEdges) (entity: Entity) ->
         List.fold (fun (acc, layoutEdges) (relation: Relation) ->
-            let src = entity.Name
-            let dist = fst relation.Dist
+            let dist = entity.Name
+            let src = fst relation.Dist
             let existsLayout = fun (layoutEdge: LayoutEdge) -> layoutEdge.Src = src && layoutEdge.Dist = dist || layoutEdge.Src = dist && layoutEdge.Dist = src
             match List.findPop existsLayout layoutEdges with
             | None, layoutEdges ->
-                let newEdge = {Src=entity.Name; Dist=fst relation.Dist; HeadKind=fst relation.Kind; TailKind=snd relation.Kind; IsConstraint=false}
+                let newEdge = {Src=src; Dist=dist; HeadKind=fst relation.Kind; TailKind=snd relation.Kind; IsConstraint=false}
                 newEdge :: acc, layoutEdges
-            | Some(_), layoutEdges ->
-                let newEdge = {Src=entity.Name; Dist=fst relation.Dist; HeadKind=fst relation.Kind; TailKind=snd relation.Kind; IsConstraint=true}
-                newEdge :: acc, layoutEdges
+            | Some(layoutEdge), layoutEdges ->
+                if layoutEdge.Src = src then
+                    {Src=src; Dist=dist; HeadKind=fst relation.Kind; TailKind=snd relation.Kind; IsConstraint=true} :: acc, layoutEdges
+                else // reversed
+                    {Src=dist; Dist=src; HeadKind=snd relation.Kind; TailKind=fst relation.Kind; IsConstraint=true} :: acc, layoutEdges
         ) (acc, layoutEdges) entity.Relations
     ) ([], layoutEdges) schema
 
