@@ -16,7 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Argu" Version="6.1.1" />
-    <PackageReference Include="FSharp.Data" Version="3.3.3" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
   </ItemGroup>
 </Project>

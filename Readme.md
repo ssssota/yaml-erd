@@ -19,21 +19,60 @@ $ dotnet publish -c release -r linux-x64
 
 `./sample.yaml` のようなYamlファイルを用意して
 ```
-$ dotnet run -- ./sample.yaml
+$ yaml-erd ./sample.yaml
 ```
-と実行すると `./sample.yaml` に対応するER図が `./output.dot` として出力される．  
-出力されたdotファイルは `dot` コマンドでPDFやPNGに変換できる．`output.dot` をPNGに変換したい場合は例えば次のコマンドを実行する．
-```
-$ dot -Tpng -o output.png output.dot
-```
+と実行すると `./sample.yaml` に対応するER図が `./output.png` に出力される．  
 
 
 出力されるファイル名は `--output` もしくは `-o` オプションで変えることができる．例えば
 ```
-$ dotnet run -- ./sample.yaml -o hoge.dot
+$ yaml-erd ./sample.yaml -o hoge.png
 ```
-とすると `hoge.dot` ファイルに出力される．
+とすると `hoge.png` ファイルに出力される．
 
+
+出力される形式は `--format` もしくは `-f` オプションで指定できる．
+対応しているフォーマットはPNG, PDF, SVGであり, それぞれ `png`, `pdf`, `svg` で指定できる.  
+例えば
+```
+$ yaml-erd ./sample.yaml -o hoge.pdf -f pdf
+```
+とすると `hoge.pdf` にPDF形式で出力される.  
+
+
+画像の出力はdotファイルを経由して生成しており，中間のdotファイルの中身を見たい場合は `--temp` もしくは `-t` オプションで出力先を指定できる．
+例えば
+```
+$ yaml-erd ./sample.yaml -o hoge.png -t temp.dot
+```
+をすると，`hoge.png` を生成するための中間ファイルが `temp.dot` に出力される．
+
+
+`yaml-erd` がどのような引数で中間のdotファイルを画像ファイルにコンパイルしているのかを知りたい場合は `--verbose` オプションをつければよい．
+```
+$ yaml-erd ./yagisan.yml -o ./hoge.png -t ./temp.dot --verbose
+[RUN] dot -Tpng ./temp.dot -o ./hoge.png
+```
+
+生成されるdotファイルに問題がある場合は
+```
+$ yaml-erd ./yagisan.yml -o ./hoge.png -t ./temp.dot --verbose
+[RUN] dot -Tpng ./temp.dot -o ./hoge.png
+[STDERR]
+Error: ./temp.dot: syntax error in line 115 near '-'
+
+[EXIT CODE] 1
+```
+などと出力される．
+
+
+dotコマンドの引数を追加したい場合は `--additional-dot-args` オプションで指定できる.  
+例えば, ノードのフォントにCalibriを使うためにdotコマンドに `-Nfontname="Calibri"` を追加したい場合は
+```
+$ yaml-erd ./yagisan.yml -o ./hoge.png -f png --verbose --additional-dot-args "-Nfontname=\"Calibri\""
+[RUN] dot -Tpng /tmp/tmp70aTiC.tmp -o ./hoge.png  -Nfontname="Calibri"
+```
+となる.
 
 ### 入力フォーマット
 

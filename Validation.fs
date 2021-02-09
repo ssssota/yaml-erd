@@ -4,8 +4,6 @@ open System
 open Util
 open Schema
 
-type ValidationWarning = Dummy
-
 type UnknownEntityError = {
     Name: string
     Pos: Position
