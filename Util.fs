@@ -43,17 +43,20 @@ module Result =
         | Error err, _ -> Error err
 
 module Option =
-    let unwrap = function
-    | None -> failwith "invalid unwrap"
-    | Some x -> x
+    let unwrap =
+        function
+        | None -> failwith "invalid unwrap"
+        | Some x -> x
 
 module List =
     let maxOf<'a> (f: 'a -> int) (d: 'a) (xs: 'a list): 'a =
-        List.fold (fun acc x ->
-            let v = f x
-            if v > fst acc then v, x
-            else acc
-        ) (f d, d) xs |> snd
+        List.fold
+            (fun acc x ->
+                let v = f x
+                if v > fst acc then v, x else acc)
+            (f d, d)
+            xs
+        |> snd
 
     let rec mem<'a when 'a: equality> (x: 'a) =
         function
@@ -72,14 +75,15 @@ module List =
     let rec lookup (name: string) (xs: (string * 'a) list): 'a option =
         match xs with
         | [] -> None
-        | (name', x) :: xs ->
-            if name = name' then Some x
-            else lookup name xs
+        | (name', x) :: xs -> if name = name' then Some x else lookup name xs
 
     let rec minus<'a when 'a: equality> (xs: 'a list) (ys: 'a list) =
-        List.fold (fun acc y ->
-            let _, acc = findPop ((=) y) acc
-            acc) xs ys
+        List.fold
+            (fun acc y ->
+                let _, acc = findPop ((=) y) acc
+                acc)
+            xs
+            ys
 
     let appendOpt<'a> (xs: 'a list) (x: 'a option): 'a list =
         match x with
@@ -89,15 +93,15 @@ module List =
     let rec tryNth<'a> (xs: 'a list) (i: int): 'a option =
         match xs with
         | [] -> None
-        | x :: xs ->
-            if i = 0 then Some x
-            else tryNth xs (i-1)
+        | x :: xs -> if i = 0 then Some x else tryNth xs (i - 1)
 
     let filterMap<'a, 'b> (f: 'a -> 'b option) (xs: 'a list): 'b list =
-        let rec aux acc = function
-        | [] -> acc
-        | x :: xs ->
-            match f x with
-            | None -> aux acc xs
-            | Some x -> aux (x :: acc) xs
+        let rec aux acc =
+            function
+            | [] -> acc
+            | x :: xs ->
+                match f x with
+                | None -> aux acc xs
+                | Some x -> aux (x :: acc) xs
+
         aux [] xs
