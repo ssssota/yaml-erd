@@ -7,13 +7,13 @@ yamlファイルを入力として対応するER図を出力するツール
 ```
 $ dotnet publish -c release
 ```
-とすると `path/to/yaml-erd/bin/release/netcoreapp3.0` 以下にバイナリ `yaml-erd` が生成される．  
+とすると `path/to/yaml-erd/bin/release/net5.0` 以下にバイナリ `yaml-erd` が生成される．  
 
 例えば64bit Linux向けにビルドしたい場合は
 ```
 $ dotnet publish -c release -r linux-x64
 ```
-とすればよい．この場合は `path/to/yaml-erd/bin/release/netcoreapp3.0/linux-x64` 以下に64bit Linux向けのバイナリが生成される．
+とすればよい．この場合は `path/to/yaml-erd/bin/release/net5.0/linux-x64` 以下に64bit Linux向けのバイナリが生成される．
 
 ### 使い方
 
