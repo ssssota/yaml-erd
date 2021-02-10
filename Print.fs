@@ -104,7 +104,25 @@ let private calcLayoutEdges (orders: string list list): string * LayoutEdge list
 
     ranks, layoutEdges
 
-let private calcEdges layoutEdges schema =
+let private isOrderContained (order: string list list) (src, dist) =
+    let rec aux: string list list -> bool = function
+    | [] -> false
+    | (hd :: tl) :: xs ->
+        let ok =
+            List.fold
+                (fun (prev, acc) (x: string) ->
+                   if acc then (x, true)
+                   else if  prev = src && dist = x then (x, true)
+                   else (x, false)
+                )
+                (hd, false)
+                tl
+            |> snd
+        ok || aux xs
+    | _ :: xs -> aux xs
+    aux order
+
+let private calcEdges layoutEdges (order: string list list) schema =
     List.fold
         (fun (acc, layoutEdges) (entity: Entity) ->
             List.fold
@@ -124,7 +142,7 @@ let private calcEdges layoutEdges schema =
                               Dist = dist
                               HeadKind = fst relation.Kind
                               TailKind = snd relation.Kind
-                              IsConstraint = false }
+                              IsConstraint = isOrderContained order (src, dist) }
 
                         newEdge :: acc, layoutEdges
                     | Some (layoutEdge), layoutEdges ->
@@ -171,7 +189,7 @@ let private printSchema schema entitySets: string =
 
     let order = calcOrder schema entitySets
     let (layout, layoutEdges) = calcLayoutEdges order
-    let (edges, layoutEdges) = calcEdges layoutEdges schema
+    let (edges, layoutEdges) = calcEdges layoutEdges order schema
 
     String.Format(
         """
