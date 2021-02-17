@@ -141,15 +141,16 @@ let private parseEntity (name: string) (node: YamlNode): Result<Entity> =
 
         let relations =
             if node.Children.ContainsKey(YamlScalarNode("relations")) then
-                let relationsNode: YamlSequenceNode =
-                    downcast node.[YamlScalarNode("relations")]
-
-                Seq.fold
-                    (fun acc x ->
-                        let relation = parseRelation x
-                        Result.merge (fun acc relation -> relation :: acc) acc relation)
-                <| Result.mkOk []
-                <| relationsNode.Children
+                match node.[YamlScalarNode("relations")] with
+                | :? YamlSequenceNode as relationsNode ->
+                    Seq.fold
+                        (fun acc x ->
+                            let relation = parseRelation x
+                            Result.merge (fun acc relation -> relation :: acc) acc relation)
+                    <| Result.mkOk []
+                    <| relationsNode.Children
+                | :? YamlScalarNode -> Result.mkOk []
+                | node -> parseError node ("relations node must be sequence or scalar")
             else
                 Result.mkOk []
 
@@ -175,23 +176,63 @@ let private parseEntity (name: string) (node: YamlNode): Result<Entity> =
 
 let private parseSchema (node: YamlNode) =
     match node with
-    | :? YamlMappingNode as mapping ->
-        match mapping.[YamlScalarNode("schema")] with
-        | :? YamlMappingNode as schema ->
-            Seq.fold
-                (fun acc key ->
-                    let key: YamlScalarNode = downcast box key
+    | :? YamlMappingNode as schema ->
+        Seq.fold
+            (fun acc key ->
+                let key: YamlScalarNode = downcast box key
 
-                    let entity = parseEntity key.Value schema.[key]
-                    Result.merge (fun acc entity -> entity :: acc) acc entity)
-            <| Result.mkOk []
-            <| schema.Children.Keys
-        | _ -> parseError mapping "toplevel mapping must have `schema` field"
-    | _ -> parseError node "toplevel must be a mapping node"
+                let entity = parseEntity key.Value schema.[key]
+                Result.merge (fun acc entity -> entity :: acc) acc entity)
+        <| Result.mkOk []
+        <| schema.Children.Keys
+    | _ -> parseError node "toplevel node must have `schema` field"
 
-let schemaFromFile (filename: string): Result<T> =
+(*
+    [Entity4, Entity5, Entity6]
+*)
+let private parseGroup (node: YamlNode) =
+    match node with
+    | :? YamlSequenceNode as group ->
+        Seq.fold
+            (fun acc (entityNameNode: YamlNode) ->
+                match entityNameNode with
+                | :? YamlScalarNode as entityName -> Result.mapOk (fun acc -> entityName.Value :: acc) acc
+                | _ -> parseError entityNameNode "element in a group must be string")
+            (Result.mkOk [])
+            group.Children
+    | _ -> parseError node "group node must be sequence"
+
+(*
+    - [Entity1, Entity2, Entity3]
+    - [Entity4, Entity5, Entity6]
+*)
+let private parseGroups (node: YamlNode): Result<string list list> =
+    match node with
+    | :? YamlSequenceNode as groups ->
+        Seq.fold
+            (fun acc (group: YamlNode) ->
+                match group with
+                | :? YamlSequenceNode as group -> Result.merge (fun acc group -> group :: acc) acc (parseGroup group)
+                | _ -> parseError group "group node must be sequence")
+            (Result.mkOk [])
+            groups.Children
+    | _ -> parseError node "toplevel node must have `group` field"
+
+let schemaFromFile (filename: string): Result<T * string list list> =
     let yaml = YamlStream()
     yaml.Load(new StreamReader(filename, Encoding.UTF8))
 
-    parseSchema (yaml.Documents.[0].RootNode)
-    |> Result.mapOk List.rev
+    match yaml.Documents.[0].RootNode with
+    | :? YamlMappingNode as mapping ->
+        if mapping.Children.ContainsKey(YamlScalarNode("schema")) then
+            let schema =
+                parseSchema mapping.[YamlScalarNode("schema")]
+            let group =
+                if mapping.Children.ContainsKey(YamlScalarNode("group")) then
+                    parseGroups mapping.[YamlScalarNode("group")]
+                else Result.mkOk []
+            Result.merge (fun schema group -> schema, group) schema group
+        else
+            parseError mapping "toplevel node must have `schema` field"
+    (* |> Result.mapOk List.rev *)
+    | node -> parseError node "toplevel must be a mapping node"

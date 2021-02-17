@@ -26,8 +26,7 @@ type private CommandLineParam =
       Temp: string
       Format: Format
       Verbose: bool
-      AdditionalDotParams: string
-      EntitySets: string [] list }
+      AdditionalDotParams: string }
 
 let private compile args =
     let command = "dot"
@@ -75,7 +74,6 @@ type Arguments =
     | [<AltCommandLine("-o")>] Output of filename: string
     | [<AltCommandLine("-f")>] Format of string
     | Additional_Dot_Args of string
-    | [<AltCommandLine("-es")>] Entity_Set of string
     | [<AltCommandLine("-v")>] Verbose
 
     interface IArgParserTemplate with
@@ -86,7 +84,6 @@ type Arguments =
             | Output _ -> "output filename"
             | Format _ -> "output format (\"png\", \"svg\" or \"pdf\")"
             | Additional_Dot_Args _ -> "additional dot params (e.g. -Nfontname=\"Calibri\")"
-            | Entity_Set _ -> "entity names which are in a row (delimited with ':', e.g. \"entity1:entity2:entity3\")"
             | Verbose -> "show commands to run and verbose output"
 
 [<EntryPoint>]
@@ -101,7 +98,6 @@ let main args =
               Output = "./output.png"
               Format = PNG
               AdditionalDotParams = ""
-              EntitySets = []
               Verbose = false }
 
         let args =
@@ -129,12 +125,6 @@ let main args =
                             (fun args ->
                                 { args with
                                       AdditionalDotParams = args.AdditionalDotParams + " " + dotArg })
-                    | Entity_Set entitySet ->
-                        args
-                        |> Result.map
-                            (fun args ->
-                                { args with
-                                      EntitySets = (entitySet.Split ':') :: args.EntitySets })
                     | Verbose ->
                         args
                         |> Result.map (fun args -> { args with Verbose = true }))
@@ -156,9 +146,10 @@ let main args =
 
         match Parse.schemaFromFile args.Input
               |> Util.Result.bind Validation.validate with
-        | Ok { Data = schema; Warnings = warnings } ->
+        | Ok { Data = schema, groups
+               Warnings = warnings } ->
             List.iter (fun warning -> Printf.eprintfn "%s" <| warning.ToString()) warnings
-            Print.schemaToFile temp schema args.EntitySets
+            Print.schemaToFile temp schema groups
             compile args
             0
         | Error errs ->

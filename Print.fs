@@ -105,21 +105,23 @@ let private calcLayoutEdges (orders: string list list): string * LayoutEdge list
     ranks, layoutEdges
 
 let private isOrderContained (order: string list list) (src, dist) =
-    let rec aux: string list list -> bool = function
-    | [] -> false
-    | (hd :: tl) :: xs ->
-        let ok =
-            List.fold
-                (fun (prev, acc) (x: string) ->
-                   if acc then (x, true)
-                   else if  prev = src && dist = x then (x, true)
-                   else (x, false)
-                )
-                (hd, false)
-                tl
-            |> snd
-        ok || aux xs
-    | _ :: xs -> aux xs
+    let rec aux: string list list -> bool =
+        function
+        | [] -> false
+        | (hd :: tl) :: xs ->
+            let ok =
+                List.fold
+                    (fun (prev, acc) (x: string) ->
+                        if acc then (x, true)
+                        else if prev = src && dist = x then (x, true)
+                        else (x, false))
+                    (hd, false)
+                    tl
+                |> snd
+
+            ok || aux xs
+        | _ :: xs -> aux xs
+
     aux order
 
 let private calcEdges layoutEdges (order: string list list) schema =
@@ -183,11 +185,11 @@ let private printRelationEdge relationEdge =
 let private printLayoutEdge layoutEdge =
     String.Format("""  {0} -> {1} [style = "invis"]""", layoutEdge.Src, layoutEdge.Dist)
 
-let private printSchema schema entitySets: string =
+let private printSchema schema groups: string =
     let nodes =
         List.map printEntity schema |> String.concat "\n"
 
-    let order = calcOrder schema entitySets
+    let order = calcOrder schema groups
     let (layout, layoutEdges) = calcLayoutEdges order
     let (edges, layoutEdges) = calcEdges layoutEdges order schema
 
@@ -222,8 +224,8 @@ digraph Schema {{
         |> String.concat "\n"
     )
 
-let schemaToFile (filename: string) (schema: Schema.T) (entitySets: string [] list) =
-    let content = printSchema schema entitySets
+let schemaToFile (filename: string) (schema: Schema.T) (groups: string list list) =
+    let content = printSchema schema groups
 
     let sw = new StreamWriter(filename)
     sw.Write(content)

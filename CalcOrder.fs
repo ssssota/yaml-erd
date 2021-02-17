@@ -3,12 +3,20 @@ module CalcOrder
 open Util
 open Schema
 
-let private makeColumns (schema: Schema.T) (entitySets: string [] list): string list list =
+let private makeColumns (schema: Schema.T) (groups: string list list): string list list =
     let graph =
         List.fold
             (fun acc entity ->
                 List.fold (fun acc relation -> Graph.add (entity.Name, fst relation.Dist) acc) acc entity.Relations)
             Graph.empty<string>
+            schema
+
+    let entityNames =
+        List.filterMap
+            (fun entity ->
+                if List.exists (fun group -> List.contains entity.Name group) groups
+                then None
+                else Some entity.Name)
             schema
 
     let rec aux acc entityNames =
@@ -20,9 +28,7 @@ let private makeColumns (schema: Schema.T) (entitySets: string [] list): string 
             aux (longest :: acc)
             <| List.minus entityNames longest
 
-    aux []
-    <| List.map (fun entity -> entity.Name) schema
-    |> List.rev
+    aux groups entityNames |> List.rev
 
 
 let private makeRows (schema: Schema.T) (rows: string list array): string list list =
@@ -66,7 +72,7 @@ let private makeRows (schema: Schema.T) (rows: string list array): string list l
     |> List.rev
 
 
-let calcOrder (schema: Schema.T) (entitySets: string [] list): string list list =
-    makeColumns schema entitySets
+let calcOrder (schema: Schema.T) (groups: string list list): string list list =
+    makeColumns schema groups
     |> Array.ofList
     |> makeRows schema

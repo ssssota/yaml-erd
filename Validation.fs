@@ -167,9 +167,12 @@ let validateRelation (schema: Schema.T): obj list * obj list =
         ([], [])
         schema
 
-let validate (schema: Schema.T): Result<Schema.T> =
+let validate (schema: Schema.T, groups: string list list): Result<Schema.T * string list list> =
     let warnings, errors = validateRelation schema
 
-    if List.isEmpty errors
-    then Ok { Data = schema; Warnings = warnings }
-    else Error errors
+    if List.isEmpty errors then
+        Ok
+            { Data = schema, groups
+              Warnings = warnings }
+    else
+        Error errors
