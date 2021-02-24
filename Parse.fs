@@ -8,31 +8,42 @@ open YamlDotNet.RepresentationModel
 open Util
 open Schema
 
-type ParseWarning =
-    { Pos: Position
-      Message: string }
+type NodeType =
+    | ScalarType
+    | SequenceType
+    | MappingType
     override self.ToString() =
-        String.Format(
-            "\x1b[33m parse warning[{0}:{1}-{2}:{3}]: \x1b[0m {4}",
-            self.Pos.StartLine,
-            self.Pos.StartColumn,
-            self.Pos.EndLine,
-            self.Pos.EndColumn,
-            self.Message
-        )
+        match self with
+        | ScalarType -> "scalar"
+        | SequenceType -> "sequence"
+        | MappingType -> "mapping"
+
+type ErrorKind =
+    | InvalidRelationKind of string
+    | InvalidRelation
+    | MustBe of NodeType list * string
+    | NeededKey of string
+    override self.ToString() =
+        match self with
+        | InvalidRelationKind s -> $"`{s}` is not valid relation head"
+        | InvalidRelation -> "not valid as relation"
+        | MustBe (types, str) ->
+            let opt =
+                types
+                |> List.map (fun typ -> typ.ToString())
+                |> String.concat " or "
+
+            $"{str} node must be {opt}"
+        | NeededKey s -> $"this node must have key `{s}`"
 
 type ParseError =
     { Pos: Position
-      Message: string }
+      Kind: ErrorKind }
     override self.ToString() =
-        String.Format(
-            "\x1b[31m parse error[{0}:{1}-{2}:{3}]: \x1b[0m {4}",
-            self.Pos.StartLine,
-            self.Pos.StartColumn,
-            self.Pos.EndLine,
-            self.Pos.EndColumn,
-            self.Message
-        )
+        $"\x1b[31m parse error[{self.Pos.StartLine}:{self.Pos.StartColumn}-{self.Pos.EndLine}:{self.Pos.EndColumn}]: \x1b[0m {
+                                                                                                                                  self.Kind.ToString
+                                                                                                                                      ()
+        }"
 
 let private positionOfNode (node: YamlNode): Position =
     { StartLine = node.Start.Line
@@ -40,85 +51,91 @@ let private positionOfNode (node: YamlNode): Position =
       EndLine = node.End.Line
       EndColumn = node.End.Column }
 
-let private parseError (node: YamlNode) (msg: string): Result<'a> =
-    Error [ { Pos = positionOfNode node
-              Message = msg } ]
+type ParseResult<'a> = ExResult<'a, unit, ParseError>
 
-let rec private parseStruct (node: YamlNode): Result<Struct> =
+let private parseError<'a> k (node: YamlNode): ParseResult<'a> =
+    ExResult.mkError { Pos = positionOfNode node; Kind = k }
+
+let rec private parseStruct (node: YamlNode): ParseResult<Struct> =
     match node with
     | :? YamlMappingNode as recordNode ->
         parseRecord recordNode
-        |> Result.mapOk (fun x -> Record(x, positionOfNode node))
+        |> ExResult.map (fun x -> Record(x, positionOfNode node))
     | :? YamlScalarNode as scalarNode ->
         parseStructLeaf scalarNode
-        |> Result.mapOk (fun x -> Scalar(x, positionOfNode node))
-    | _ -> parseError node "struct node must be either mapping or scalar"
+        |> ExResult.map (fun x -> Scalar(x, positionOfNode node))
+    | _ -> parseError (MustBe([ MappingType; ScalarType ], "struct")) node
 
-and private parseRecord (node: YamlMappingNode): Result<(Key * Struct) list> =
+and private parseRecord (node: YamlMappingNode) =
     Seq.fold
         (fun acc key ->
             let key: YamlScalarNode = downcast box key
             let strct = parseStruct node.Children.[key]
-            Result.merge (fun acc strct -> (key.ToString(), strct) :: acc) acc strct)
-    <| Result.mkOk []
+            ExResult.merge (fun map strct -> Map.add (Key key.Value) strct map) acc strct)
+    <| ExResult.mkOk Map.empty
     <| Seq.rev node.Children.Keys
 
-and private parseStructLeaf (node: YamlScalarNode): Result<string> = Result.mkOk node.Value
+and private parseStructLeaf (node: YamlScalarNode) = ExResult.mkOk <| ScalarVal node.Value
 
-let private parseRelationKind (node: YamlNode) (isLeft: bool) (str: string): Result<RelationKind> =
+let private parseRelationKind (node: YamlNode) (isLeft: bool) (str: string) =
     match isLeft, str with
-    | _, "" -> Result.mkOk Unknown
-    | _, "||" -> Result.mkOk One
+    | _, "" -> ExResult.mkOk Unknown
+    | _, "||" -> ExResult.mkOk One
     | true, "|o"
-    | false, "o|" -> Result.mkOk ZeroOrOne
+    | false, "o|" -> ExResult.mkOk ZeroOrOne
     | true, "}o"
-    | false, "o{" -> Result.mkOk ZeroOrMore
+    | false, "o{" -> ExResult.mkOk ZeroOrMore
     | true, "}|"
-    | false, "|{" -> Result.mkOk OneOrMore
-    | _, _ ->
-        parseError node
-        <| String.Format("`{0}` is not valid relation head", str)
+    | false, "|{" -> ExResult.mkOk OneOrMore
+    | _, _ -> parseError (InvalidRelationKind str) node
 
-let private parseRelation (node: YamlNode): Result<Relation> =
-    let node =
-        match node with
-        | :? YamlScalarNode as relationNode -> Result.mkOk relationNode
-        | _ -> parseError node "relation node must be scalar"
+let private parseRelation (node: YamlNode): ParseResult<Relation> =
+    match node with
+    | :? YamlScalarNode as relationNode ->
+        let relationRegex =
+            Regex(
+                "^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) (?<kindLeft>.*?)--(?<kindRight>.*?) (?<distEntity>.+?)\\((?<distPathHead>.+?)(, (?<distPathTail>.+?))*\\)$"
+            )
 
-    node
-    |> Result.bind
-        (fun relationNode ->
-            let regex =
-                Regex(
-                    "^\\((?<src>.+?)(, (?<srcTail>.+?))*\\) (?<kindLeft>.*?)--(?<kindRight>.*?) (?<distEntity>.+?)\\((?<distField>.+?)(, (?<distFieldTail>.+?))*\\)$"
-                )
+        let m = relationRegex.Match(relationNode.Value)
 
-            let m = regex.Match(relationNode.Value)
-
-            if m.Success then
-                Result.mkOk (m, relationNode)
-            else
-                parseError relationNode
-                <| String.Format("`{0}` is not acceptable as relation", relationNode.Value))
-    |> Result.bind
-        (fun (m, node) ->
-            let srcHead = m.Groups.["src"].Value
+        if m.Success then
+            let srcHead =
+                m.Groups.["src"].Value.Split "."
+                |> Array.map Key
+                |> Array.toList
+                |> Path
 
             let srcTails =
-                Seq.map (fun (capture: Capture) -> capture.Value) m.Groups.["srcTail"].Captures
+                Seq.map
+                    (fun (capture: Capture) ->
+                        capture.Value.Split "."
+                        |> Array.map Key
+                        |> Array.toList
+                        |> Path)
+                    m.Groups.["srcTail"].Captures
                 |> Seq.toList
 
             let src = srcHead :: srcTails
+            let distEntity = EntityName m.Groups.["distEntity"].Value
 
-            let distEntity = m.Groups.["distEntity"].Value
-            let distFieldHead = m.Groups.["distField"].Value
+            let distPathHead =
+                m.Groups.["distPathHead"].Value.Split "."
+                |> Array.map Key
+                |> Array.toList
+                |> Path
 
-            let distFieldTails =
-                Seq.map (fun (capture: Capture) -> capture.Value) m.Groups.["distFieldTail"].Captures
+            let distPathTail =
+                Seq.map
+                    (fun (capture: Capture) ->
+                        capture.Value.Split "."
+                        |> Array.map Key
+                        |> Array.toList
+                        |> Path)
+                    m.Groups.["distPathTail"].Captures
                 |> Seq.toList
 
-            let dist =
-                distEntity, distFieldHead :: distFieldTails
+            let distPath = distPathHead :: distPathTail
 
             let kindLeft =
                 parseRelationKind node true m.Groups.["kindLeft"].Value
@@ -126,18 +143,29 @@ let private parseRelation (node: YamlNode): Result<Relation> =
             let kindRight =
                 parseRelationKind node false m.Groups.["kindRight"].Value
 
-            Result.merge
+            ExResult.merge
                 (fun kindLeft kindRight ->
                     { Src = src
-                      Dist = dist
+                      Dist = distEntity, distPath
                       Kind = kindLeft, kindRight
                       Pos = positionOfNode node })
                 kindLeft
-                kindRight)
+                kindRight
+        else
+            parseError InvalidRelation relationNode
+    | _ -> parseError InvalidRelation node
 
-let private parseEntity (name: string) (node: YamlNode): Result<Entity> =
+
+let private parseEntity (node: YamlNode): ParseResult<Entity> =
     match node with
     | :? YamlMappingNode as node ->
+        let record =
+            if node.Children.ContainsKey(YamlScalarNode("struct")) then
+                match node.[YamlScalarNode("struct")] with
+                | :? YamlMappingNode as structNode -> parseRecord structNode
+                | _ -> parseError (MustBe([ MappingType ], "struct")) node
+            else
+                parseError (NeededKey "struct") node
 
         let relations =
             if node.Children.ContainsKey(YamlScalarNode("relations")) then
@@ -146,33 +174,23 @@ let private parseEntity (name: string) (node: YamlNode): Result<Entity> =
                     Seq.fold
                         (fun acc x ->
                             let relation = parseRelation x
-                            Result.merge (fun acc relation -> relation :: acc) acc relation)
-                    <| Result.mkOk []
+                            ExResult.merge (fun acc relation -> relation :: acc) acc relation)
+                    <| ExResult.mkOk []
                     <| relationsNode.Children
-                | :? YamlScalarNode -> Result.mkOk []
-                | node -> parseError node ("relations node must be sequence or scalar")
+                | :? YamlScalarNode -> ExResult.mkOk []
+                | node -> parseError (MustBe([ SequenceType; ScalarType ], "relations")) node
             else
-                Result.mkOk []
+                ExResult.mkOk []
 
-        let record =
-            if node.Children.ContainsKey(YamlScalarNode("struct")) then
-                match node.[YamlScalarNode("struct")] with
-                | :? YamlMappingNode as structNode -> parseRecord structNode
-                | _ -> parseError node "struct node must be mapping"
-            else
-                parseError node
-                <| String.Format("entity `{0}` must have `struct` data", name)
-
-        Result.merge
-            (fun relations strct ->
-                { Name = name
-                  Struct = strct
+        ExResult.merge
+            (fun record relations ->
+                { Struct = record
                   Relations = relations
                   Pos = positionOfNode node })
-            relations
             record
+            relations
 
-    | _ -> parseError node "entity node must be a mapping node"
+    | _ -> parseError (MustBe([ MappingType ], "entity")) node
 
 let private parseSchema (node: YamlNode) =
     match node with
@@ -180,15 +198,15 @@ let private parseSchema (node: YamlNode) =
         Seq.fold
             (fun acc key ->
                 let key: YamlScalarNode = downcast box key
-
-                let entity = parseEntity key.Value schema.[key]
-                Result.merge (fun acc entity -> entity :: acc) acc entity)
-        <| Result.mkOk []
+                let entityName = EntityName key.Value
+                let entity = parseEntity schema.[key]
+                ExResult.merge (fun table entity -> Map.add entityName entity table) acc entity)
+        <| ExResult.mkOk Map.empty
         <| schema.Children.Keys
-    | _ -> parseError node "toplevel node must have `schema` field"
+    | _ -> parseError (NeededKey "schema") node
 
 (*
-    [Entity4, Entity5, Entity6]
+    e.g. [Entity4, Entity5, Entity6]
 *)
 let private parseGroup (node: YamlNode) =
     match node with
@@ -196,43 +214,47 @@ let private parseGroup (node: YamlNode) =
         Seq.fold
             (fun acc (entityNameNode: YamlNode) ->
                 match entityNameNode with
-                | :? YamlScalarNode as entityName -> Result.mapOk (fun acc -> entityName.Value :: acc) acc
-                | _ -> parseError entityNameNode "element in a group must be string")
-            (Result.mkOk [])
+                | :? YamlScalarNode as entityName -> ExResult.map (fun acc -> EntityName entityName.Value :: acc) acc
+                | _ ->
+                    ExResult.merge (fun acc _ -> acc) acc
+                    <| parseError (MustBe([ ScalarType ], "element in group")) entityNameNode)
+            (ExResult.mkOk [])
             group.Children
-    | _ -> parseError node "group node must be sequence"
+    | _ -> parseError (MustBe([ SequenceType ], "group")) node
 
 (*
+    e.g.
     - [Entity1, Entity2, Entity3]
     - [Entity4, Entity5, Entity6]
 *)
-let private parseGroups (node: YamlNode): Result<string list list> =
+let private parseGroups (node: YamlNode): ParseResult<Schema.Group list> =
     match node with
     | :? YamlSequenceNode as groups ->
         Seq.fold
             (fun acc (group: YamlNode) ->
                 match group with
-                | :? YamlSequenceNode as group -> Result.merge (fun acc group -> group :: acc) acc (parseGroup group)
-                | _ -> parseError group "group node must be sequence")
-            (Result.mkOk [])
+                | :? YamlSequenceNode as group -> ExResult.merge (fun acc group -> group :: acc) acc (parseGroup group)
+                | _ -> parseError (MustBe([ SequenceType ], "group")) group)
+            (ExResult.mkOk [])
             groups.Children
-    | _ -> parseError node "toplevel node must have `group` field"
+    | _ -> parseError (NeededKey "group") node
 
-let schemaFromFile (filename: string): Result<T * string list list> =
+let schemaFromFile (filename: string): ParseResult<T> =
     let yaml = YamlStream()
     yaml.Load(new StreamReader(filename, Encoding.UTF8))
 
     match yaml.Documents.[0].RootNode with
     | :? YamlMappingNode as mapping ->
         if mapping.Children.ContainsKey(YamlScalarNode("schema")) then
-            let schema =
+            let entities =
                 parseSchema mapping.[YamlScalarNode("schema")]
-            let group =
-                if mapping.Children.ContainsKey(YamlScalarNode("group")) then
-                    parseGroups mapping.[YamlScalarNode("group")]
-                else Result.mkOk []
-            Result.merge (fun schema group -> schema, group) schema group
+
+            let groups =
+                if mapping.Children.ContainsKey(YamlScalarNode("group"))
+                then parseGroups mapping.[YamlScalarNode("group")]
+                else ExResult.mkOk []
+
+            ExResult.merge (fun entities groups -> { Entities = entities; Groups = groups }) entities groups
         else
-            parseError mapping "toplevel node must have `schema` field"
-    (* |> Result.mapOk List.rev *)
-    | node -> parseError node "toplevel must be a mapping node"
+            parseError (NeededKey "schema") mapping
+    | node -> parseError (MustBe([ MappingType ], "toplevel")) node

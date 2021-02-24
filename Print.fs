@@ -1,6 +1,5 @@
 module Print
 
-open System
 open System.IO
 open Util
 
@@ -8,13 +7,13 @@ open Schema
 open CalcOrder
 
 type private RelationEdge =
-    { Src: string
-      Dist: string
+    { Src: EntityName
+      Dist: EntityName
       HeadKind: RelationKind
       TailKind: RelationKind
       IsConstraint: bool }
 
-type private LayoutEdge = { Src: string; Dist: string }
+type private LayoutEdge = { Src: EntityName; Dist: EntityName }
 
 let private makeValidLabel (str: string) =
     str
@@ -25,43 +24,35 @@ let private makeValidLabel (str: string) =
 
 let private printRecord =
     let rec aux indent prefix record =
-        List.map
-            (fun (key, strct) ->
+        Seq.map
+            (fun ((Key key), strct) ->
                 let key = makeValidLabel key
 
                 let prefix =
-                    makeValidLabel
-                    <| if prefix = "" then key else prefix + "__" + key
+                    makeValidLabel ((if prefix = "" then key else prefix + "__" + key))
 
                 match strct with
-                | Scalar (v, _) ->
-                    String.Format(
-                        """<tr><td port="{1}" align="left">{0}{2}: {3}</td></tr>""",
-                        indent,
-                        prefix,
-                        key,
-                        makeValidLabel v
-                    )
+                | Scalar (ScalarVal v, _) ->
+                    $"<tr><td port=\"{prefix}\" align=\"left\">{indent}{key}: {makeValidLabel v}</td></tr>"
                 | Record (fields, _) ->
                     let after = aux (indent + "　") prefix fields
 
-                    String.Format("""    <tr><td port="{1}" align="left">{0}{2}: </td></tr>""", indent, prefix, key)
+                    $"    <tr><td port=\"{prefix}\" align=\"left\">{indent}{key}: </td></tr>"
                     + after)
-            record
+        <| Map.toSeq record
         |> String.concat "\n        "
 
     aux "" ""
 
-let private printEntity (entity: Entity): string =
-    String.Format(
-        """  {0} [label=<
-    <table border="0" cellborder="1" cellspacing="0">
-        <tr><td>{0}</td></tr>
-        {1}
-    </table>>];""",
-        makeValidLabel entity.Name,
-        printRecord entity.Struct
-    )
+let private printEntity (EntityName entityName, entity: Entity): string =
+    let entityName = makeValidLabel entityName
+    let record = printRecord entity.Struct
+
+    $"  {entityName} [label=<
+    <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">
+        <tr><td>{entityName}</td></tr>
+        {record}
+    </table>>];"
 
 let private printRelationKind =
     function
@@ -71,9 +62,17 @@ let private printRelationKind =
     | ZeroOrMore -> "icurveodot"
     | OneOrMore -> "icurvetee"
 
-let private calcLayoutEdges (orders: string list list): string * LayoutEdge list =
+let private calcLayoutEdges (orders: EntityName list list): string * LayoutEdge list =
     let ranks =
-        List.map (fun order -> String.Format("""  {{rank = same; {0} }}""", String.concat "; " order)) orders
+        List.map
+            (fun order ->
+                let order =
+                    order
+                    |> List.map (fun e -> e.ToString())
+                    |> String.concat "; "
+
+                $"  {{rank = same; {order} }}")
+            orders
         |> String.concat "\n"
 
     let maxLength =
@@ -84,7 +83,7 @@ let private calcLayoutEdges (orders: string list list): string * LayoutEdge list
             (fun accEdges idx ->
                 let nodes =
                     List.fold
-                        (fun (accNodes: string list) (order: string list) ->
+                        (fun (accNodes: EntityName list) (order: EntityName list) ->
                             match List.tryNth order idx with
                             | None -> accNodes
                             | Some x -> x :: accNodes)
@@ -95,7 +94,7 @@ let private calcLayoutEdges (orders: string list list): string * LayoutEdge list
                     accEdges
                 else
                     List.fold
-                        (fun (accEdges, prev) (node: string) -> ({ Src = prev; Dist = node } :: accEdges), node)
+                        (fun (accEdges, prev) (node: EntityName) -> ({ Src = prev; Dist = node } :: accEdges), node)
                         (accEdges, nodes.Head)
                         (nodes.Tail)
                     |> fst)
@@ -104,14 +103,14 @@ let private calcLayoutEdges (orders: string list list): string * LayoutEdge list
 
     ranks, layoutEdges
 
-let private isOrderContained (order: string list list) (src, dist) =
-    let rec aux: string list list -> bool =
+let private isOrderContained (order: EntityName list list) (src, dist) =
+    let rec aux: EntityName list list -> bool =
         function
         | [] -> false
         | (hd :: tl) :: xs ->
             let ok =
                 List.fold
-                    (fun (prev, acc) (x: string) ->
+                    (fun (prev, acc) (x: EntityName) ->
                         if acc then (x, true)
                         else if prev = src && dist = x then (x, true)
                         else (x, false))
@@ -124,12 +123,12 @@ let private isOrderContained (order: string list list) (src, dist) =
 
     aux order
 
-let private calcEdges layoutEdges (order: string list list) schema =
+let private calcEdges layoutEdges (order: EntityName list list) entities =
     List.fold
-        (fun (acc, layoutEdges) (entity: Entity) ->
+        (fun (acc, layoutEdges) (entityName, entity) ->
             List.fold
                 (fun (acc, layoutEdges) (relation: Relation) ->
-                    let dist = entity.Name
+                    let dist = entityName
                     let src = fst relation.Dist
 
                     let existsLayout =
@@ -167,65 +166,66 @@ let private calcEdges layoutEdges (order: string list list) schema =
                 (acc, layoutEdges)
                 entity.Relations)
         ([], layoutEdges)
-        schema
+    <| Map.toList entities
 
 let private printRelationEdge relationEdge =
     let arrowhead = printRelationKind relationEdge.HeadKind
     let arrowtail = printRelationKind relationEdge.TailKind
+    let isConstraint = relationEdge.IsConstraint
 
-    String.Format(
-        """  {0} -> {1} [arrowhead = {2}, arrowtail = {3}, constraint = {4}, dir = both]""",
-        relationEdge.Src,
-        relationEdge.Dist,
-        arrowhead,
-        arrowtail,
-        if relationEdge.IsConstraint then "true" else "false"
-    )
+    $"  {relationEdge.Src} -> {relationEdge.Dist} [arrowhead = {arrowhead}, arrowtail = {arrowtail}, constraint = {
+                                                                                                                       isConstraint
+    }, dir = both]"
 
 let private printLayoutEdge layoutEdge =
-    String.Format("""  {0} -> {1} [style = "invis"]""", layoutEdge.Src, layoutEdge.Dist)
+    $"  {layoutEdge.Src} -> {layoutEdge.Dist} [style = \"invis\"]"
 
-let private printSchema schema groups: string =
+let private printSchema schema =
     let nodes =
-        List.map printEntity schema |> String.concat "\n"
+        schema.Entities
+        |> Map.toList
+        |> List.map printEntity
+        |> String.concat "\n"
 
-    let order = calcOrder schema groups
+    let order = calcOrder schema
     let (layout, layoutEdges) = calcLayoutEdges order
-    let (edges, layoutEdges) = calcEdges layoutEdges order schema
 
-    String.Format(
-        """
+    let (edges, layoutEdges) =
+        calcEdges layoutEdges order schema.Entities
+
+    let layoutEdges =
+        layoutEdges
+        |> List.map printLayoutEdge
+        |> String.concat "\n"
+
+    let edges =
+        edges
+        |> List.map printRelationEdge
+        |> String.concat "\n"
+
+    $"\n
 digraph Schema {{
   graph [
-    charset = "UTF-8"
+    charset = \"UTF-8\"
     newrank = true
     ranksep = 1.5
     nodesep = 1.5
   ];
 
   node [
-    shape = "none"
-    fontname = "Noto Sans Mono"
+    shape = \"none\"
+    fontname = \"Noto Sans Mono\"
   ];
 
-{0}
-{1}
-{2}
-{3}
+{nodes}
+{layout}
+{layoutEdges}
+{edges}
 }}
-""",
-        nodes,
-        layout,
-        layoutEdges
-        |> List.map printLayoutEdge
-        |> String.concat "\n",
-        edges
-        |> List.map printRelationEdge
-        |> String.concat "\n"
-    )
+"
 
-let schemaToFile (filename: string) (schema: Schema.T) (groups: string list list) =
-    let content = printSchema schema groups
+let schemaToFile (filename: string) (schema: Schema.T) =
+    let content = printSchema schema
 
     let sw = new StreamWriter(filename)
     sw.Write(content)

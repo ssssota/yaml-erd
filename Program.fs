@@ -1,6 +1,7 @@
 ﻿open System
 open System.Diagnostics
 open Argu
+open Util
 
 type Format =
     | PNG
@@ -12,7 +13,7 @@ let private formatOfString (str: string) =
     | "png" -> Ok PNG
     | "svg" -> Ok SVG
     | "pdf" -> Ok PDF
-    | _ -> Error <| String.Format("unknown format: {0}", str)
+    | _ -> Error $"unknown format: {str}"
 
 let private stringOfFormat =
     function
@@ -32,13 +33,8 @@ let private compile args =
     let command = "dot"
 
     let pArgs =
-        String.Format(
-            "-T{0} {1} -o {2} {3}",
-            stringOfFormat args.Format,
-            args.Temp,
-            args.Output,
-            args.AdditionalDotParams
-        )
+        let format = stringOfFormat args.Format
+        $"-T{format} {args.Temp} -o {args.Output} {args.AdditionalDotParams}"
 
     let procStartInfo =
         ProcessStartInfo(
@@ -50,7 +46,7 @@ let private compile args =
             RedirectStandardError = true
         )
 
-    if args.Verbose then printfn "[RUN] %s %s" command pArgs
+    if args.Verbose then printfn $"[RUN] {command} {pArgs}"
 
     try
         use p = new Process(StartInfo = procStartInfo)
@@ -61,11 +57,11 @@ let private compile args =
         let exitCode = p.ExitCode
 
         if args.Verbose then
-            if output <> "" then printfn "[STDOUT] \n%s" output
-            if error <> "" then eprintfn "[STDERR] \n%s" error
-            if exitCode <> 0 then printfn "[EXIT CODE] %d" exitCode
+            if output <> "" then printfn $"[STDOUT] \n{output}"
+            if error <> "" then eprintfn $"[STDERR] \n{error}"
+            if exitCode <> 0 then printfn $"[EXIT CODE] {exitCode}"
     with e ->
-        eprintfn "[PROCESS ERROR] %s" e.Message
+        eprintfn $"[PROCESS ERROR] {e.Message}"
         eprintfn "`dot` command not found...?"
 
 type Arguments =
@@ -104,30 +100,22 @@ let main args =
             List.fold
                 (fun args ->
                     function
-                    | Input path ->
-                        args
-                        |> Result.map (fun args -> { args with Input = path })
-                    | Temp path ->
-                        args
-                        |> Result.map (fun args -> { args with Temp = path })
-                    | Output path ->
-                        args
-                        |> Result.map (fun args -> { args with Output = path })
+                    | Input path -> Result.map (fun args -> { args with Input = path }) args
+                    | Temp path -> Result.map (fun args -> { args with Temp = path }) args
+                    | Output path -> Result.map (fun args -> { args with Output = path }) args
                     | Format format ->
-                        args
-                        |> Result.bind
+                        Result.bind
                             (fun args ->
                                 formatOfString format
                                 |> Result.map (fun format -> { args with Format = format }))
+                            args
                     | Additional_Dot_Args dotArg ->
-                        args
-                        |> Result.map
+                        Result.map
                             (fun args ->
                                 { args with
                                       AdditionalDotParams = args.AdditionalDotParams + " " + dotArg })
-                    | Verbose ->
-                        args
-                        |> Result.map (fun args -> { args with Verbose = true }))
+                            args
+                    | Verbose -> Result.map (fun args -> { args with Verbose = true }) args)
             <| Ok initArgs
             <| (parser.Parse args).GetAllResults()
 
@@ -135,26 +123,23 @@ let main args =
             match args with
             | Ok args -> args
             | Error err ->
-                eprintfn "invalid commandline: %s" err
-                eprintfn "%s" <| parser.PrintUsage()
+                eprintfn $"invalid commandline: {err}"
+                eprintfn $"{parser.PrintUsage()}"
                 exit 1
 
         let temp =
-            if args.Temp = "" then System.IO.Path.GetTempFileName() else args.Temp
+            if args.Temp = "" then IO.Path.GetTempFileName() else args.Temp
 
         let args = { args with Temp = temp }
 
-        match Parse.schemaFromFile args.Input
-              |> Util.Result.bind Validation.validate with
-        | Ok { Data = schema, groups
-               Warnings = warnings } ->
-            List.iter (fun warning -> Printf.eprintfn "%s" <| warning.ToString()) warnings
-            Print.schemaToFile temp schema groups
+        match Parse.schemaFromFile args.Input with
+        | Ok { Data = schema; Warnings = warnings } ->
+            Print.schemaToFile temp schema
             compile args
             0
         | Error errs ->
-            List.iter (fun err -> Printf.eprintfn "%s" <| err.ToString()) errs
+            Array.iter (fun err -> eprintfn $"{err.ToString()}") errs
             1
     with e ->
-        Printf.eprintfn "%s" e.Message
+        Printf.eprintfn $"{e.Message}"
         1

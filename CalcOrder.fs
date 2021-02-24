@@ -3,21 +3,21 @@ module CalcOrder
 open Util
 open Schema
 
-let private makeColumns (schema: Schema.T) (groups: string list list): string list list =
+let private makeColumns (schema: Schema.T): EntityName list list =
     let graph =
-        List.fold
-            (fun acc entity ->
-                List.fold (fun acc relation -> Graph.add (entity.Name, fst relation.Dist) acc) acc entity.Relations)
-            Graph.empty<string>
-            schema
+        Map.fold
+            (fun acc entityName entity ->
+                List.fold (fun acc relation -> Graph.add (entityName, fst relation.Dist) acc) acc entity.Relations)
+            Graph.empty<EntityName>
+            schema.Entities
 
     let entityNames =
         List.filterMap
-            (fun entity ->
-                if List.exists (fun group -> List.contains entity.Name group) groups
+            (fun (entityName, _) ->
+                if List.exists (fun group -> List.contains entityName group) schema.Groups
                 then None
-                else Some entity.Name)
-            schema
+                else Some entityName)
+        <| Map.toList schema.Entities
 
     let rec aux acc entityNames =
         let longest = Graph.longestPath entityNames graph
@@ -28,17 +28,16 @@ let private makeColumns (schema: Schema.T) (groups: string list list): string li
             aux (longest :: acc)
             <| List.minus entityNames longest
 
-    aux groups entityNames |> List.rev
+    aux schema.Groups entityNames |> List.rev
 
 
-let private makeRows (schema: Schema.T) (rows: string list array): string list list =
+let private makeRows (entities: Map<EntityName, Entity>) (rows: EntityName list array): EntityName list list =
     let graph: Graph.T<int> =
         Array.fold
-            (fun (graph, srcIdx) (row: string list) ->
+            (fun (graph, srcIdx) (row: EntityName list) ->
                 List.fold
-                    (fun (graph: Graph.T<int>) (entityName: string) ->
-                        let entity =
-                            List.find (fun entity -> entity.Name = entityName) schema
+                    (fun (graph: Graph.T<int>) (entityName: EntityName) ->
+                        let entity = Map.find entityName entities
 
                         List.fold
                             (fun graph relation ->
@@ -72,7 +71,7 @@ let private makeRows (schema: Schema.T) (rows: string list array): string list l
     |> List.rev
 
 
-let calcOrder (schema: Schema.T) (groups: string list list): string list list =
-    makeColumns schema groups
+let calcOrder (schema: Schema.T): EntityName list list =
+    makeColumns schema
     |> Array.ofList
-    |> makeRows schema
+    |> makeRows schema.Entities

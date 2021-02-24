@@ -2,11 +2,33 @@ module Schema
 
 open Util
 
-type Key = string
+type Key =
+    | Key of string
+    override self.ToString() =
+        match self with
+        | Key s -> s
+
+type Path =
+    | Path of Key list
+    override self.ToString() =
+        match self with
+        | Path path ->
+            path
+            |> List.map (fun key -> key.ToString())
+            |> String.concat "."
+
+type ScalarVal = ScalarVal of string
+
+type EntityName =
+    | EntityName of string
+    override self.ToString() =
+        match self with
+        | EntityName name -> name
+
 
 type Struct =
-    | Scalar of string * Position
-    | Record of (Key * Struct) list * Position
+    | Scalar of ScalarVal * Position
+    | Record of Map<Key, Struct> * Position
 
 type RelationKind =
     | Unknown
@@ -16,15 +38,32 @@ type RelationKind =
     | OneOrMore
 
 type Relation =
-    { Src: string list
-      Dist: string * string list
+    { Src: Path list
+      Dist: EntityName * Path list
       Kind: RelationKind * RelationKind
       Pos: Position }
 
 type Entity =
-    { Name: string
-      Struct: (Key * Struct) list
+    { Struct: Map<Key, Struct>
       Relations: Relation list
       Pos: Position }
 
-type T = Entity list
+module Path =
+    let rec existsInStruct strct (Path path) =
+        match strct with
+        | Scalar _ -> List.isEmpty path
+        | Record (fields, _) ->
+            match path with
+            | [] -> false
+            | head :: tail -> Map.exists (fun key v -> key = head && existsInStruct v (Path tail)) fields
+
+    let existsInEntity entity path =
+        existsInStruct
+        <| Record(entity.Struct, entity.Pos)
+        <| path
+
+type Group = EntityName list
+
+type T =
+    { Entities: Map<EntityName, Entity>
+      Groups: Group list }

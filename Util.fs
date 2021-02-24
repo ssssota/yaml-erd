@@ -1,7 +1,5 @@
 module Util
 
-open System
-
 type Position =
     { StartLine: int
       StartColumn: int
@@ -9,25 +7,14 @@ type Position =
       EndColumn: int }
 
 
+type OkValue<'a, 'b> = { Data: 'a; Warnings: 'b [] }
+type ExResult<'a, 'b, 'c> = Result<OkValue<'a, 'b>, 'c []>
 
-type OkValue<'a> = { Data: 'a; Warnings: obj list }
-type Result<'a> = Result<OkValue<'a>, obj list>
+module ExResult =
+    let mkOk x = Ok { Data = x; Warnings = Array.empty }
+    let mkError x = Error [| x |]
 
-module Result =
-    let mkOk x = Ok { Data = x; Warnings = [] }
-
-    let bind f =
-        function
-        | Ok { Data = data; Warnings = warnings1 } ->
-            match f data with
-            | Ok { Data = data; Warnings = warnings2 } ->
-                Ok
-                    { Data = data
-                      Warnings = warnings1 @ warnings2 }
-            | Error err -> Error err
-        | Error err -> Error err
-
-    let mapOk f =
+    let map f =
         function
         | Ok { Data = data; Warnings = warnings } -> Ok { Data = f data; Warnings = warnings }
         | Error err -> Error err
@@ -37,8 +24,8 @@ module Result =
         | Ok { Data = data1; Warnings = warnings1 }, Ok { Data = data2; Warnings = warnings2 } ->
             Ok
                 { Data = f data1 data2
-                  Warnings = warnings1 @ warnings2 }
-        | Error err1, Error err2 -> Error <| err1 @ err2
+                  Warnings = Array.append warnings1 warnings2 }
+        | Error err1, Error err2 -> Error <| Array.append err1 err2
         | _, Error err
         | Error err, _ -> Error err
 
