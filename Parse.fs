@@ -1,6 +1,5 @@
 module Parse
 
-open System
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
@@ -220,6 +219,10 @@ let private parseGroup (node: YamlNode) =
                     <| parseError (MustBe([ ScalarType ], "element in group")) entityNameNode)
             (ExResult.mkOk [])
             group.Children
+        |> ExResult.map
+            (fun entities ->
+                { Entities = entities
+                  Pos = positionOfNode node })
     | _ -> parseError (MustBe([ SequenceType ], "group")) node
 
 (*

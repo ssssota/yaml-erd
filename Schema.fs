@@ -62,7 +62,9 @@ module Path =
         <| Record(entity.Struct, entity.Pos)
         <| path
 
-type Group = EntityName list
+type Group =
+    { Entities: EntityName list
+      Pos: Position }
 
 type T =
     { Entities: Map<EntityName, Entity>

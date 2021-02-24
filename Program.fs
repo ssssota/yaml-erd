@@ -134,11 +134,19 @@ let main args =
 
         match Parse.schemaFromFile args.Input with
         | Ok { Data = schema; Warnings = warnings } ->
-            Print.schemaToFile temp schema
-            compile args
-            0
+            Array.iter (fun warning -> eprintfn $"{warning}") warnings
+
+            match Validate.validate schema with
+            | Ok { Data = schema; Warnings = warnings } ->
+                Array.iter (fun warning -> eprintfn $"warning") warnings
+                Print.schemaToFile temp schema
+                compile args
+                0
+            | Error errs ->
+                Array.iter (fun err -> eprintfn $"{err}") errs
+                1
         | Error errs ->
-            Array.iter (fun err -> eprintfn $"{err.ToString()}") errs
+            Array.iter (fun err -> eprintfn $"{err}") errs
             1
     with e ->
         Printf.eprintfn $"{e.Message}"

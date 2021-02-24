@@ -14,10 +14,13 @@ let private makeColumns (schema: Schema.T): EntityName list list =
     let entityNames =
         List.filterMap
             (fun (entityName, _) ->
-                if List.exists (fun group -> List.contains entityName group) schema.Groups
+                if List.exists (fun (group: Group) -> List.contains entityName group.Entities) schema.Groups
                 then None
                 else Some entityName)
         <| Map.toList schema.Entities
+
+    let groups =
+        List.map (fun (groups: Group) -> groups.Entities) schema.Groups
 
     let rec aux acc entityNames =
         let longest = Graph.longestPath entityNames graph
@@ -28,7 +31,7 @@ let private makeColumns (schema: Schema.T): EntityName list list =
             aux (longest :: acc)
             <| List.minus entityNames longest
 
-    aux schema.Groups entityNames |> List.rev
+    aux groups entityNames |> List.rev
 
 
 let private makeRows (entities: Map<EntityName, Entity>) (rows: EntityName list array): EntityName list list =

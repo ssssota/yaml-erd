@@ -19,6 +19,11 @@ type MutualRelationError =
       Field2: Path
       RefPos2: Position }
 
+type DuplicateEntityNameError =
+    { EntityName: EntityName
+      Group1: Group
+      Group2: Group }
+
 let private stringOfPos pos =
     $"{pos.StartLine}:{pos.StartColumn}-{pos.EndLine}:{pos.EndColumn}"
 
@@ -26,6 +31,7 @@ type ValidateError =
     | UnknownEntity of UnknownEntityError
     | UnknownPath of UnknownPathError
     | MutualRelations of MutualRelationError
+    | DuplicateEntityName of DuplicateEntityNameError
     override self.ToString() =
         match self with
         | UnknownEntity err ->
@@ -38,6 +44,10 @@ type ValidateError =
             $"\x1b[31m validation error[{stringOfPos err.RefPos1} and {stringOfPos err.RefPos2}]: \x1b[0m mutual relations are detected. `{
                                                                                                                                                err.EntityName1
             }:{err.Field1}` <-> `{err.EntityName2}:{err.Field2}`"
+        | DuplicateEntityName err ->
+            $"\x1b[31m validation error[{stringOfPos err.Group1.Pos} and {stringOfPos err.Group2.Pos}]: \x1b[0m duplicate entity name detected. {
+                                                                                                                                                     err.EntityName
+            } in {err.Group1.Entities} and {err.Group2.Entities}"
 
 type ValidateResult<'a> = ExResult<'a, unit, ValidateError>
 
@@ -120,14 +130,38 @@ let private validateRelation (acc: ValidateError list)
            :: acc
 
 let validate (schema: Schema.T): ValidateResult<Schema.T> =
-    let errors: ValidateError [] =
+    let errors: ValidateError list =
         Map.fold
             (fun (acc: ValidateError list) (entityName: EntityName) (entity: Entity) ->
                 let acc = validateEntity acc entity
                 List.fold (fun acc relation -> validateRelation acc entityName relation schema) acc entity.Relations)
             []
             schema.Entities
-        |> List.rev
-        |> List.toArray
+
+    let errors: ValidateError list =
+        List.fold
+            (fun (errors: ValidateError list, map: Map<EntityName, Group>) (focusedGroup: Group) ->
+                List.fold
+                    (fun (error, map) entityName ->
+                        let map = Map.add entityName focusedGroup map
+
+                        match Map.tryFind entityName map with
+                        | Some existingGroup ->
+                            let errors =
+                                DuplicateEntityName
+                                    { EntityName = entityName
+                                      Group1 = existingGroup
+                                      Group2 = focusedGroup }
+                                :: errors
+
+                            (errors, map)
+                        | None -> (error, map))
+                    (errors, map)
+                    focusedGroup.Entities)
+            (errors, Map.empty)
+            schema.Groups
+        |> fst
+
+    let errors = errors |> List.rev |> List.toArray
 
     if Array.isEmpty errors then ExResult.mkOk schema else Error errors
