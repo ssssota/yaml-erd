@@ -7,6 +7,7 @@ open YamlDotNet.RepresentationModel
 open Util
 open Schema
 
+[<CustomEquality;NoComparison>]
 type NodeType =
     | ScalarType
     | SequenceType
@@ -17,6 +18,14 @@ type NodeType =
         | SequenceType -> "sequence"
         | MappingType -> "mapping"
 
+    override self.Equals other =
+        match other with
+        | :? NodeType as other -> self = other
+        | _ -> false
+
+    override this.GetHashCode () = hash (this)
+
+[<CustomEquality;NoComparison>]
 type ErrorKind =
     | InvalidRelationKind of string
     | InvalidRelation
@@ -34,6 +43,19 @@ type ErrorKind =
 
             $"{str} node must be {opt}"
         | NeededKey s -> $"this node must have key `{s}`"
+
+    override self.Equals other =
+        match other with
+        | :? ErrorKind as other ->
+            match self, other with
+            | InvalidRelationKind x, InvalidRelationKind y -> x = y
+            | InvalidRelation, InvalidRelation -> true
+            | MustBe (nodeTypes1, str1), MustBe (nodeTypes2, str2) -> nodeTypes1 = nodeTypes2 && str1 = str2
+            | NeededKey key1, NeededKey key2 -> key1 = key2
+            | _ -> false
+        | _ -> false
+
+    override this.GetHashCode () = hash (this)
 
 type ParseError =
     { Pos: Position

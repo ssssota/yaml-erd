@@ -2,11 +2,14 @@ module Schema
 
 open Util
 
+
 type Key =
     | Key of string
+
     override self.ToString() =
         match self with
         | Key s -> s
+
 
 type Path =
     | Path of Key list

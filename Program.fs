@@ -82,6 +82,7 @@ type Arguments =
             | Additional_Dot_Args _ -> "additional dot params (e.g. -Nfontname=\"Calibri\")"
             | Verbose -> "show commands to run and verbose output"
 
+
 [<EntryPoint>]
 let main args =
     let parser =

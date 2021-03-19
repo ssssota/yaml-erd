@@ -56,8 +56,6 @@ let private shortestPath<'a when 'a: equality> (state: State<'a>) (graph: T<'a>)
 
     aux [ init ]
 
-
-
 let longestPath<'a when 'a: equality> (domainNodes: 'a list) (graph: T<'a>): Path<'a> =
     List.fold
         (fun (acc: Path<'a>) node ->
@@ -73,17 +71,19 @@ let longestPath<'a when 'a: equality> (domainNodes: 'a list) (graph: T<'a>): Pat
                     | Some path -> state.[key] <- Some(key :: path))
                 (List.ofSeq state.Keys)
 
-            let max =
-                List.maxOf
-                    (function
-                    | None -> 0
-                    | Some xs -> List.length xs)
+            let longestPath =
+                Seq.fold
+                    (fun (acc: 'a list option) path ->
+                        match acc, path with
+                        | _, None -> acc
+                        | None, _ -> path
+                        | Some acc, Some path -> if List.length path < List.length acc then Some acc else Some path)
                     None
-                    (List.ofSeq state.Values)
+                    state.Values
 
-            match max with
+            match longestPath with
             | None -> acc
-            | Some max when List.length acc > List.length max -> acc
-            | Some max -> max)
+            | Some path when List.length acc > List.length path -> acc
+            | Some path -> path)
         []
         domainNodes

@@ -1,10 +1,22 @@
 module Util
 
+[<CustomEquality;NoComparison>]
 type Position =
     { StartLine: int
       StartColumn: int
       EndLine: int
       EndColumn: int }
+
+    override self.Equals other =
+        match other with
+        | :? Position as other ->
+            self.StartLine = other.StartLine &&
+            self.StartColumn = other.StartLine &&
+            self.EndLine = other.EndLine &&
+            self.EndColumn = other.EndColumn
+        | _ -> false
+
+    override self.GetHashCode () = hash (self)
 
 
 type OkValue<'a, 'b> = { Data: 'a; Warnings: 'b [] }
@@ -36,14 +48,6 @@ module Option =
         | Some x -> x
 
 module List =
-    let maxOf<'a> (f: 'a -> int) (d: 'a) (xs: 'a list): 'a =
-        List.fold
-            (fun acc x ->
-                let v = f x
-                if v > fst acc then v, x else acc)
-            (f d, d)
-            xs
-        |> snd
 
     let rec mem<'a when 'a: equality> (x: 'a) =
         function
