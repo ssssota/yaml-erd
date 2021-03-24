@@ -28,7 +28,7 @@ type EntityName =
         match self with
         | EntityName name -> name
 
-
+[<StructuralEquality;NoComparison>]
 type Struct =
     | Scalar of ScalarVal * Position
     | Record of Map<Key, Struct> * Position
@@ -40,12 +40,14 @@ type RelationKind =
     | ZeroOrMore
     | OneOrMore
 
+[<StructuralEquality;NoComparison>]
 type Relation =
     { Src: Path list
       Dist: EntityName * Path list
       Kind: RelationKind * RelationKind
       Pos: Position }
 
+[<StructuralEquality;NoComparison>]
 type Entity =
     { Struct: Map<Key, Struct>
       Relations: Relation list

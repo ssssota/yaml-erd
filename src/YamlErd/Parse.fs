@@ -7,7 +7,7 @@ open YamlDotNet.RepresentationModel
 open Util
 open Schema
 
-[<CustomEquality;NoComparison>]
+[<StructuralEquality;NoComparison>]
 type NodeType =
     | ScalarType
     | SequenceType
@@ -18,14 +18,7 @@ type NodeType =
         | SequenceType -> "sequence"
         | MappingType -> "mapping"
 
-    override self.Equals other =
-        match other with
-        | :? NodeType as other -> self = other
-        | _ -> false
-
-    override this.GetHashCode () = hash (this)
-
-[<CustomEquality;NoComparison>]
+[<StructuralEquality;NoComparison>]
 type ErrorKind =
     | InvalidRelationKind of string
     | InvalidRelation
@@ -44,27 +37,13 @@ type ErrorKind =
             $"{str} node must be {opt}"
         | NeededKey s -> $"this node must have key `{s}`"
 
-    override self.Equals other =
-        match other with
-        | :? ErrorKind as other ->
-            match self, other with
-            | InvalidRelationKind x, InvalidRelationKind y -> x = y
-            | InvalidRelation, InvalidRelation -> true
-            | MustBe (nodeTypes1, str1), MustBe (nodeTypes2, str2) -> nodeTypes1 = nodeTypes2 && str1 = str2
-            | NeededKey key1, NeededKey key2 -> key1 = key2
-            | _ -> false
-        | _ -> false
-
-    override this.GetHashCode () = hash (this)
-
+[<StructuralEquality;NoComparison>]
 type ParseError =
     { Pos: Position
       Kind: ErrorKind }
     override self.ToString() =
-        $"\x1b[31m parse error[{self.Pos.StartLine}:{self.Pos.StartColumn}-{self.Pos.EndLine}:{self.Pos.EndColumn}]: \x1b[0m {
-                                                                                                                                  self.Kind.ToString
-                                                                                                                                      ()
-        }"
+        let kind = self.Kind.ToString()
+        $"\x1b[31m parse error[{self.Pos.StartLine}:{self.Pos.StartColumn}-{self.Pos.EndLine}:{self.Pos.EndColumn}]: \x1b[0m {kind}"
 
 let private positionOfNode (node: YamlNode): Position =
     { StartLine = node.Start.Line
@@ -224,7 +203,7 @@ let private parseSchema (node: YamlNode) =
                 ExResult.merge (fun table entity -> Map.add entityName entity table) acc entity)
         <| ExResult.mkOk Map.empty
         <| schema.Children.Keys
-    | _ -> parseError (NeededKey "schema") node
+    | _ -> parseError (MustBe([ MappingType ], "schema")) node
 
 (*
     e.g. [Entity4, Entity5, Entity6]
@@ -242,8 +221,8 @@ let private parseGroup (node: YamlNode) =
             (ExResult.mkOk [])
             group.Children
         |> ExResult.map
-            (fun entities ->
-                { Entities = entities
+            (fun entityNames ->
+                { Entities = List.rev entityNames
                   Pos = positionOfNode node })
     | _ -> parseError (MustBe([ SequenceType ], "group")) node
 
@@ -256,12 +235,10 @@ let private parseGroups (node: YamlNode): ParseResult<Schema.Group list> =
     match node with
     | :? YamlSequenceNode as groups ->
         Seq.fold
-            (fun acc (group: YamlNode) ->
-                match group with
-                | :? YamlSequenceNode as group -> ExResult.merge (fun acc group -> group :: acc) acc (parseGroup group)
-                | _ -> parseError (MustBe([ SequenceType ], "group")) group)
+            (fun acc (group: YamlNode) -> ExResult.merge (fun acc group -> group :: acc) acc (parseGroup group))
             (ExResult.mkOk [])
             groups.Children
+        |> ExResult.map List.rev
     | _ -> parseError (NeededKey "group") node
 
 let schemaFromFile (filename: string): ParseResult<T> =

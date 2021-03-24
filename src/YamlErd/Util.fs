@@ -1,23 +1,11 @@
 module Util
 
-[<CustomEquality;NoComparison>]
+[<StructuralEquality;StructuralComparison>]
 type Position =
     { StartLine: int
       StartColumn: int
       EndLine: int
       EndColumn: int }
-
-    override self.Equals other =
-        match other with
-        | :? Position as other ->
-            self.StartLine = other.StartLine &&
-            self.StartColumn = other.StartLine &&
-            self.EndLine = other.EndLine &&
-            self.EndColumn = other.EndColumn
-        | _ -> false
-
-    override self.GetHashCode () = hash (self)
-
 
 type OkValue<'a, 'b> = { Data: 'a; Warnings: 'b [] }
 type ExResult<'a, 'b, 'c> = Result<OkValue<'a, 'b>, 'c []>
@@ -96,3 +84,23 @@ module List =
                 | Some x -> aux (x :: acc) xs
 
         aux [] xs
+
+module Map =
+  let (|Found|_|) key map =
+    map
+    |> Map.tryFind key
+    |> Option.map (fun x -> x, Map.remove key map)
+
+  let rec (|Founds|_|) keys map =
+    match keys with
+    | [] -> None
+    | [key] ->
+      match map with
+      | Found key (x, restMap) -> Some ([x], restMap)
+      | _ -> None
+    | key :: restKeys ->
+      match map with
+      | Found key (x, restMap) ->
+        (|Founds|_|) restKeys restMap
+        |> Option.map (fun (vals, restMap) -> x :: vals, restMap)
+      | _ -> None

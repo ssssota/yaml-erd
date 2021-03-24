@@ -1,0 +1,5 @@
+schema:
+  Hoge:
+    struct:
+      id: int
+      name: string

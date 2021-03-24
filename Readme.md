@@ -1,32 +1,29 @@
-## yaml-erd
+## yaml-erdとは
 
 yamlファイルを入力として対応するER図を出力するツール
 
 ### ビルド
 
-```
-$ dotnet publish -c release
-```
-とすると `path/to/yaml-erd/bin/release/net5.0` 以下にバイナリ `yaml-erd` が生成される．  
+ビルドツールには FAKE (https://fake.build/) を使っている.
 
-例えば64bit Linux向けにビルドしたい場合は
 ```
-$ dotnet publish -c release -r linux-x64
+$ dotnet fake build
 ```
-とすればよい．この場合は `path/to/yaml-erd/bin/release/net5.0/linux-x64` 以下に64bit Linux向けのバイナリが生成される．
+とするとビルドが走り，単体テストが実行された後に実行可能なバイナリ `<path-to-yaml-erd>/publish/<runtime>/yaml-erd` が生成される．
+
 
 ### 使い方
 
-`./sample.yaml` のようなYamlファイルを用意して
+`examples/sample.yaml` のようなYamlファイルを用意して
 ```
-$ yaml-erd ./sample.yaml
+$ yaml-erd ./examples/sample.yaml
 ```
-と実行すると `./sample.yaml` に対応するER図が `./output.png` に出力される．  
+と実行すると `examples/sample.yaml` に対応するER図が `./output.png` に出力される．  
 
 
 出力されるファイル名は `--output` もしくは `-o` オプションで変えることができる．例えば
 ```
-$ yaml-erd ./sample.yaml -o hoge.png
+$ yaml-erd ./examples/sample.yaml -o hoge.png
 ```
 とすると `hoge.png` ファイルに出力される．
 
@@ -35,7 +32,7 @@ $ yaml-erd ./sample.yaml -o hoge.png
 対応しているフォーマットはPNG, PDF, SVGであり, それぞれ `png`, `pdf`, `svg` で指定できる.  
 例えば
 ```
-$ yaml-erd ./sample.yaml -o hoge.pdf -f pdf
+$ yaml-erd ./examples/sample.yaml -o hoge.pdf -f pdf
 ```
 とすると `hoge.pdf` にPDF形式で出力される.  
 
@@ -43,20 +40,20 @@ $ yaml-erd ./sample.yaml -o hoge.pdf -f pdf
 画像の出力はdotファイルを経由して生成しており，中間のdotファイルの中身を見たい場合は `--temp` もしくは `-t` オプションで出力先を指定できる．
 例えば
 ```
-$ yaml-erd ./sample.yaml -o hoge.png -t temp.dot
+$ yaml-erd ./examples/sample.yaml -o hoge.png -t temp.dot
 ```
 をすると，`hoge.png` を生成するための中間ファイルが `temp.dot` に出力される．
 
 
 `yaml-erd` がどのような引数で中間のdotファイルを画像ファイルにコンパイルしているのかを知りたい場合は `--verbose` オプションをつければよい．
 ```
-$ yaml-erd ./yagisan.yml -o ./hoge.png -t ./temp.dot --verbose
+$ yaml-erd ./examples/sample.yaml -o ./hoge.png -t ./temp.dot --verbose
 [RUN] dot -Tpng ./temp.dot -o ./hoge.png
 ```
 
 生成されるdotファイルに問題がある場合は
 ```
-$ yaml-erd ./yagisan.yml -o ./hoge.png -t ./temp.dot --verbose
+$ yaml-erd some-invalid-input.yaml -o ./hoge.png -t ./temp.dot --verbose
 [RUN] dot -Tpng ./temp.dot -o ./hoge.png
 [STDERR]
 Error: ./temp.dot: syntax error in line 115 near '-'
@@ -69,14 +66,14 @@ Error: ./temp.dot: syntax error in line 115 near '-'
 dotコマンドの引数を追加したい場合は `--additional-dot-args` オプションで指定できる.  
 例えば, ノードのフォントにCalibriを使うためにdotコマンドに `-Nfontname="Calibri"` を追加したい場合は
 ```
-$ yaml-erd ./yagisan.yml -o ./hoge.png -f png --verbose --additional-dot-args "-Nfontname=\"Calibri\""
+$ yaml-erd ./examples/sample.yaml -o ./hoge.png -f png --verbose --additional-dot-args "-Nfontname=\"Calibri\""
 [RUN] dot -Tpng /tmp/tmp70aTiC.tmp -o ./hoge.png  -Nfontname="Calibri"
 ```
 となる.
 
 ### 入力フォーマット
 
-入力されるYamlファイルは以下のような形式になっている必要がある
+入力されるyamlファイルは以下のような形式になっている必要がある
 ```
 schema:
   <エンティティ名1>:

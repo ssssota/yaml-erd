@@ -1,0 +1,72 @@
+schema:
+  Entity1:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity2(id)"
+  Entity2:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity3(id)"
+  Entity3:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity6(id)"
+  Entity4:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity5(id)"
+      - "(id) --|| Entity2(id)"
+  Entity5:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity6(id)"
+  Entity6:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity8(id)"
+  Entity7:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity8(id)"
+  Entity8:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity9(id)"
+  Entity9:
+    struct:
+      id: int
+      name: string
+  Entity10:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity11(id)"
+  Entity11:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity12(id)"
+  Entity12:
+    struct:
+      id: int
+      name: string
+    relations:
+      - "(id) --|| Entity1(id)"
