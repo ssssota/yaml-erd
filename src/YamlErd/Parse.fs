@@ -4,6 +4,8 @@ open System.IO
 open System.Text
 open System.Text.RegularExpressions
 open YamlDotNet.RepresentationModel
+open YamlDotNet.Serialization
+open YamlDotNet.Serialization.NamingConventions
 open Util
 open Schema
 
@@ -244,11 +246,8 @@ let private parseGroups (node: YamlNode): ParseResult<Schema.Group list> =
         |> ExResult.map List.rev
     | _ -> parseError (NeededKey "group") node
 
-let schemaFromFile (filename: string): ParseResult<T> =
-    let yaml = YamlStream()
-    yaml.Load(new StreamReader(filename, Encoding.UTF8))
-
-    match yaml.Documents.[0].RootNode with
+let private schemaFromYaml (node: YamlNode): ParseResult<Schema.T> =
+    match node with
     | :? YamlMappingNode as mapping ->
         if mapping.Children.ContainsKey(YamlScalarNode("schema")) then
             let entities =
@@ -263,3 +262,13 @@ let schemaFromFile (filename: string): ParseResult<T> =
         else
             parseError (NeededKey "schema") mapping
     | node -> parseError (MustBe([ MappingType ], "toplevel")) node
+
+let schemaFromString (str: string): ParseResult<Schema.T> =
+    let yaml = YamlStream()
+    yaml.Load(new StringReader(str))
+    schemaFromYaml yaml.Documents.[0].RootNode
+
+let schemaFromFile (filename: string): ParseResult<Schema.T> =
+    let yaml = YamlStream()
+    yaml.Load(new StreamReader(filename, Encoding.UTF8))
+    schemaFromYaml yaml.Documents.[0].RootNode

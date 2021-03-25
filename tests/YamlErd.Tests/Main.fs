@@ -105,6 +105,22 @@ let parseTests =
                 check actual)
         parseTestCases
 
+let yamlStr = @"schema:
+  Hoge:
+    struct:
+      id: int
+      name: string
+"
+
+[<Tests>]
+let parseFromStringTests =
+    testList
+        "Parse From String Test"
+        [ testCase "parsing from string test"
+          <| fun () ->
+              let actual = Parse.schemaFromString yamlStr
+              Expect.isOk actual "parsing should success" ]
+
 open Validate
 
 let validationShouldSuccess (result: ValidateResult<Schema.T>) =
