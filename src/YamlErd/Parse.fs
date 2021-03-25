@@ -7,7 +7,7 @@ open YamlDotNet.RepresentationModel
 open Util
 open Schema
 
-[<StructuralEquality;NoComparison>]
+[<StructuralEquality; NoComparison>]
 type NodeType =
     | ScalarType
     | SequenceType
@@ -18,7 +18,7 @@ type NodeType =
         | SequenceType -> "sequence"
         | MappingType -> "mapping"
 
-[<StructuralEquality;NoComparison>]
+[<StructuralEquality; NoComparison>]
 type ErrorKind =
     | InvalidRelationKind of string
     | InvalidRelation
@@ -37,13 +37,16 @@ type ErrorKind =
             $"{str} node must be {opt}"
         | NeededKey s -> $"this node must have key `{s}`"
 
-[<StructuralEquality;NoComparison>]
+[<StructuralEquality; NoComparison>]
 type ParseError =
     { Pos: Position
       Kind: ErrorKind }
     override self.ToString() =
         let kind = self.Kind.ToString()
-        $"\x1b[31m parse error[{self.Pos.StartLine}:{self.Pos.StartColumn}-{self.Pos.EndLine}:{self.Pos.EndColumn}]: \x1b[0m {kind}"
+
+        $"\x1b[31m parse error[{self.Pos.StartLine}:{self.Pos.StartColumn}-{self.Pos.EndLine}:{self.Pos.EndColumn}]: \x1b[0m {
+                                                                                                                                  kind
+        }"
 
 let private positionOfNode (node: YamlNode): Position =
     { StartLine = node.Start.Line

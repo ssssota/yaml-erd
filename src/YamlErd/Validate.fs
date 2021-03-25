@@ -165,6 +165,8 @@ let validate (schema: Schema.T): ValidateResult<Schema.T> =
         |> List.rev
         |> List.toArray
 
-    let groupErrors: ValidateError [] = validateGroups schema.Groups |> List.toArray
+    let groupErrors: ValidateError [] =
+        validateGroups schema.Groups |> List.toArray
+
     let errors = Array.append entityErrors groupErrors
     if Array.isEmpty errors then ExResult.mkOk schema else Error errors

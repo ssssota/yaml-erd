@@ -1,6 +1,6 @@
 module Util
 
-[<StructuralEquality;StructuralComparison>]
+[<StructuralEquality; StructuralComparison>]
 type Position =
     { StartLine: int
       StartColumn: int
@@ -86,21 +86,21 @@ module List =
         aux [] xs
 
 module Map =
-  let (|Found|_|) key map =
-    map
-    |> Map.tryFind key
-    |> Option.map (fun x -> x, Map.remove key map)
+    let (|Found|_|) key map =
+        map
+        |> Map.tryFind key
+        |> Option.map (fun x -> x, Map.remove key map)
 
-  let rec (|Founds|_|) keys map =
-    match keys with
-    | [] -> None
-    | [key] ->
-      match map with
-      | Found key (x, restMap) -> Some ([x], restMap)
-      | _ -> None
-    | key :: restKeys ->
-      match map with
-      | Found key (x, restMap) ->
-        (|Founds|_|) restKeys restMap
-        |> Option.map (fun (vals, restMap) -> x :: vals, restMap)
-      | _ -> None
+    let rec (|Founds|_|) keys map =
+        match keys with
+        | [] -> None
+        | [ key ] ->
+            match map with
+            | Found key (x, restMap) -> Some([ x ], restMap)
+            | _ -> None
+        | key :: restKeys ->
+            match map with
+            | Found key (x, restMap) ->
+                (|Founds|_|) restKeys restMap
+                |> Option.map (fun (vals, restMap) -> x :: vals, restMap)
+            | _ -> None
