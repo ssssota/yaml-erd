@@ -11,6 +11,13 @@ $ dotnet fake build
 ```
 とするとビルドが走り，単体テストが実行された後に実行可能なバイナリ `<path-to-yaml-erd>/publish/<runtime>/yaml-erd` が生成される．
 
+### Webブラウザ版
+
+```
+$ dotnet run --project src/YamlErdOnWeb
+```
+を実行すると，Web版のyaml-erdがビルドされ `localhost:5000` からWeb版を使うことができる．  
+`http://localhost:5000` にアクセスしてtextareaにyaml形式のschemaを入力し，convertボタンを押すと，入力に対応したgraphvizのdot形式かエラーが出力される．
 
 ### 使い方
 

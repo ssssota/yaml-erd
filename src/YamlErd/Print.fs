@@ -224,6 +224,8 @@ digraph Schema {{
 }}
 "
 
+let schemaToString (schema: Schema.T): string = printSchema schema
+
 let schemaToFile (filename: string) (schema: Schema.T) =
     let content = printSchema schema
 
