@@ -4,46 +4,71 @@ open Elmish
 open Bolero
 open Bolero.Html
 
+open Microsoft.JSInterop
 
+type Model =
+    { input: string
+      output: string
+      errors: string }
 
-type Model = { input: string; output: string }
-
-let initModel = { input = ""; output = "" }
+let initModel = { input = ""; output = ""; errors = "" }
 
 type Message =
     | Input of string
     | Convert
 
-
-let private convert input =
-  match Parse.schemaFromString input with
-  | Ok { Data = schema; Warnings = warnings } ->
-    let warnings = warnings |> Array.map (fun w -> w.ToString()) |> String.concat "\n"
-    warnings +
-      match Validate.validate schema with
-      | Ok { Data = schema; Warnings = warnings} ->
-        Print.schemaToString schema
-      | Error errs ->
-        errs |> Array.map (fun err -> err.ToString()) |> String.concat "\n"
-  | Error errs ->
-    errs |> Array.map (fun err -> err.ToString()) |> String.concat "\n"
-
-let update message model =
-    match message with
+let update (js: IJSRuntime) msg model =
+    match msg with
     | Input src -> { model with input = src }
-    | Convert -> { model with output = convert model.input }
+    | Convert ->
+        match Parse.schemaFromString model.input with
+        | Ok { Data = schema; Warnings = warnings } ->
+            match Validate.validate schema with
+            | Ok { Data = schema; Warnings = warnings } ->
+                let dot = Print.schemaToString schema
+                js.InvokeVoidAsync("showOutput", dot) |> ignore // todo
+                { model with output = dot; errors = "" }
+            | Error errs ->
+                let errs =
+                    errs
+                    |> Array.map (fun err -> err.ToString())
+                    |> String.concat "\n"
+
+                { model with errors = errs }
+        | Error errs ->
+            let errs =
+                errs
+                |> Array.map (fun err -> err.ToString())
+                |> String.concat "\n"
+
+            { model with errors = errs }
+
 
 let view model dispatch =
     div [] [
-        textarea [attr.rows 12;  bind.input.string model.input (fun v -> dispatch (Input v)) ] []
-        button [ on.click (fun _ -> dispatch Convert) ] [
+        textarea [ attr.classes [ "textarea" ]
+                   attr.rows 12
+                   bind.input.string model.input (fun v -> dispatch (Input v)) ] []
+        button [ attr.classes [ "button" ]
+                 on.click (fun _ -> dispatch Convert) ] [
             text "convert!"
         ]
-        text <| model.output
+        label [ attr.classes [ "label" ] ] [
+            text "output:"
+        ]
+        textarea [ attr.classes [ "textarea" ] ] [
+            text model.output
+        ]
+        label [ attr.classes [ "label" ] ] [
+            text "errors:"
+        ]
+        textarea [ attr.classes [ "textarea" ] ] [
+            text model.errors
+        ]
     ]
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
     override this.Program =
-        Program.mkSimple (fun _ -> initModel) update view
+        Program.mkSimple (fun _ -> initModel) (update this.JSRuntime) view
