@@ -46,6 +46,9 @@ let update (js: IJSRuntime) msg model =
 
 let view model dispatch =
     div [] [
+        label [ attr.classes [ "label" ] ] [
+            text "input:"
+        ]
         textarea [ attr.classes [ "textarea" ]
                    attr.rows 12
                    bind.input.string model.input (fun v -> dispatch (Input v)) ] []

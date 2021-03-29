@@ -16,8 +16,8 @@ $ dotnet fake build
 ```
 $ dotnet run --project src/YamlErdOnWeb
 ```
-を実行すると，Web版のyaml-erdがビルドされ `localhost:5000` からWeb版を使うことができる．  
-`http://localhost:5000` にアクセスしてtextareaにyaml形式のschemaを入力し，convertボタンを押すと，入力に対応したgraphvizのdot形式かエラーが出力される．
+を実行すると，Web版のyaml-erdがビルドされたのち `localhost:5000` でlisten状態になる．  
+input欄にyaml形式のschemaを入力し，convertボタンを押すと，output欄にdot形式が出力され，画面の下の方にgraphvizから得られたsvgが表示される．入力が間違っていてconvertに失敗した場合はerrors欄にその情報が出力される．
 
 ### 使い方
 
