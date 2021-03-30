@@ -4,78 +4,72 @@ schema:
       id: int
       name: string
     relations:
-      - "(id) -- Entity2(id)"
-      - "(id) -- Entity5(id)"
+      - "(id) --|| Entity2(id)"
   Entity2:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity3(id)"
-      - "(id) -- Entity6(id)"
+      - "(id) --|| Entity3(id)"
   Entity3:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity4(id)"
-      - "(id) -- Entity7(id)"
+      - "(id) --|| Entity6(id)"
   Entity4:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity8(id)"
+      - "(id) --|| Entity5(id)"
+      - "(id) --|| Entity2(id)"
   Entity5:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity6(id)"
-      - "(id) -- Entity9(id)"
+      - "(id) --|| Entity6(id)"
   Entity6:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity7(id)"
-      - "(id) -- Entity10(id)"
+      - "(id) --|| Entity8(id)"
   Entity7:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity8(id)"
-      - "(id) -- Entity11(id)"
+      - "(id) --|| Entity8(id)"
   Entity8:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity12(id)"
+      - "(id) --|| Entity9(id)"
   Entity9:
     struct:
       id: int
       name: string
-    relations:
-      - "(id) -- Entity10(id)"
   Entity10:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity11(id)"
+      - "(id) --|| Entity11(id)"
   Entity11:
     struct:
       id: int
       name: string
     relations:
-      - "(id) -- Entity12(id)"
+      - "(id) --|| Entity12(id)"
   Entity12:
     struct:
       id: int
       name: string
+    relations:
+      - "(id) --|| Entity1(id)"
 group:
-  - [Entity1, Entity2, Entity3, Entity4]
-  - [Entity5, Entity6, Entity7, Entity8]
-  - [Entity9, Entity10, Entity11, Entity12]
+  - [Entity4, Entity5, Entity6]
+  - [Entity1, Entity12, Entity11]

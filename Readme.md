@@ -19,6 +19,8 @@ $ dotnet run --project src/YamlErdOnWeb
 を実行すると，Web版のyaml-erdがビルドされたのち `localhost:5000` でlisten状態になる．  
 input欄にyaml形式のschemaを入力し，convertボタンを押すと，output欄にdot形式が出力され，画面の下の方にgraphvizから得られたsvgが表示される．入力が間違っていてconvertに失敗した場合はerrors欄にその情報が出力される．
 
+このWebブラウザ版はBolero (https://fsbolero.io/) によってF#のコードをwasmに変換することで動いている．
+
 ### 使い方
 
 `examples/sample.yaml` のようなYamlファイルを用意して
