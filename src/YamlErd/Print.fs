@@ -214,7 +214,7 @@ digraph Schema {{
 
   node [
     shape = \"none\"
-    fontname = \"Noto Sans Mono\"
+    fontname = \"Noto Sans\"
   ];
 
 {nodes}
