@@ -10,15 +10,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/index.css">
-  <script type="text/javascript" src="https://unpkg.com/viz.js@1.8.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm/dist/index.min.js"></script>
   <script>
     window.showOutput = (str) => {
-      try {
-        var result = Viz(str, { format: 'svg' });
-        document.getElementById("output").innerHTML = result;
-      } catch (err) {
-        console.log(err);
-      }
+      var hpccWasm = window["@hpcc-js/wasm"];
+      hpccWasm.graphviz.layout(str, "svg", "dot").then(svg => {
+        document.getElementById("output").innerHTML = svg;
+      });
     };
   </script>
 </head>
