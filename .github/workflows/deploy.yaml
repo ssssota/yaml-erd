@@ -51,11 +51,10 @@ jobs:
       run: tar -zcvf osx-x64.tar.gz osx-x64
     - name: Release
       uses: softprops/action-gh-release@v1
-      working-directory: ./publish
       with:
         files: |
-          win-x64.zip
-          linux-x64.tar.gz
-          osx-x64.tar.gz
+          ./publish/win-x64.zip
+          ./publish/linux-x64.tar.gz
+          ./publish/osx-x64.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
