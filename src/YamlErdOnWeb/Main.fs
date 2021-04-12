@@ -11,7 +11,7 @@ type Model =
       output: string
       errors: string }
 
-let initModel = { input = ""; output = ""; errors = "" }
+let initModel = { input = "schema:\n"; output = ""; errors = "" }
 
 type Message =
     | Input of string
