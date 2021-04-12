@@ -41,17 +41,17 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Zip binary (win)
-      working_directory: ./publish
+      working-directory: ./publish
       run: zip -r win-x64.zip win-x64
     - name: Zip binary (linux)
-      working_directory: ./publish
+      working-directory: ./publish
       run: tar -zcvf linux-x64.tar.gz linux-x64
     - name: Zip binary (osx)
-      working_directory: ./publish
+      working-directory: ./publish
       run: tar -zcvf osx-x64.tar.gz osx-x64
     - name: Release
       uses: softprops/action-gh-release@v1
-      working_directory: ./publish
+      working-directory: ./publish
       with:
         files: |
           win-x64.zip
