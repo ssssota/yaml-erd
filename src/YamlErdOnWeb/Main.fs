@@ -58,15 +58,15 @@ let view model dispatch =
         ]
         label [ attr.classes [ "label" ] ] [
             text "output:"
-        ]
-        textarea [ attr.classes [ "textarea" ] ] [
-            text model.output
+            textarea [ attr.classes [ "textarea" ] ] [
+                text model.output
+            ]
         ]
         label [ attr.classes [ "label" ] ] [
             text "errors:"
-        ]
-        textarea [ attr.classes [ "textarea" ] ] [
-            text model.errors
+            textarea [ attr.classes [ "textarea" ] ] [
+                text model.errors
+            ]
         ]
     ]
 
