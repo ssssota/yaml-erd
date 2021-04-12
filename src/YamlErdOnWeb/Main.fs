@@ -51,7 +51,7 @@ let view model dispatch =
         ]
         textarea [ attr.classes [ "textarea" ]
                    attr.rows 12
-                   bind.input.string model.input (fun v -> dispatch (Input v)) ] []
+                   bind.input.string model.input (fun v -> dispatch (Input v); dispatch Convert) ] []
         button [ attr.classes [ "button" ]
                  on.click (fun _ -> dispatch Convert) ] [
             text "convert!"
