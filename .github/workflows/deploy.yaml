@@ -1,0 +1,61 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Release title
+        required: true
+    branched: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Restore tools
+      run: dotnet tool restore
+    - name: Build
+      run: dotnet fake build
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v2
+    - name: Copy static
+      run:  cp -r ./src/YamlErdOnWeb/wwwroot/* ./src/YamlErdOnWeb/bin/Release/net5.0/wwwroot/
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./src/YamlErdOnWeb/bin/Release/net5.0/wwwroot
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v2
+    - name: Zip binary (win)
+      working_directory: ./publish
+      run: zip -r win-x64.zip win-x64
+    - name: Zip binary (linux)
+      working_directory: ./publish
+      run: tar -zcvf linux-x64.tar.gz linux-x64
+    - name: Zip binary (osx)
+      working_directory: ./publish
+      run: tar -zcvf osx-x64.tar.gz osx-x64
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      working_directory: ./publish
+      with:
+        files: |
+          win-x64.zip
+          linux-x64.tar.gz
+          osx-x64.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
