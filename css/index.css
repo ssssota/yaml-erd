@@ -1,0 +1,7 @@
+html, body {
+  height: 100%;
+}
+
+#output svg {
+  max-width: 100%;
+}
