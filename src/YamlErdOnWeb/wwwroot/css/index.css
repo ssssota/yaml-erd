@@ -2,6 +2,10 @@ html, body {
   height: 100%;
 }
 
+textarea {
+  font-family: 'Inconsolata', monospace;
+}
+
 #output svg {
   max-width: 100%;
 }
