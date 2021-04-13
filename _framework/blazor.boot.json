@@ -205,13 +205,13 @@
       "mscorlib.dll": "sha256-aRw41w\/QxOqc3NzhbK7UKf1zT6z\/oHtp9BlXl4JWwjM=",
       "netstandard.dll": "sha256-stWPH7tpmfc4JFroiKGKWcPfLQ+ALD6yQUXA9NiV0fQ=",
       "System.Private.CoreLib.dll": "sha256-PbMTdb+kswRpFmuD8S4hY70nkZ9LeYJg7y3wm7hj0CQ=",
-      "YamlErd.dll": "sha256-m4xKuMeraDK5N2YeTpGO5EQ9QzsUmgA3E6hGsE8ltaw=",
-      "YamlErdOnWeb.dll": "sha256-iYI16FttDmg3cAnhr3T41lEoSzvi\/fSJ8nL4+5u4Y9w="
+      "YamlErd.dll": "sha256-be1JEAIAhcWeaE+YtMQlmk4Wbg0l9OG9FdlHWki6nuU=",
+      "YamlErdOnWeb.dll": "sha256-p4\/SJwmsJoG5j94DoYpbfGwsCV71JLDAynHQCYuPr5U="
     },
     "lazyAssembly": null,
     "pdb": {
-      "YamlErd.pdb": "sha256-aiWlxlrwuooYNFOrqGvDM8fISwdXlYyP3tiVi9XmflQ=",
-      "YamlErdOnWeb.pdb": "sha256-eARd5lI4gZQiqXBJL1JcuwZmV6VPykatyl9QUGz3sus="
+      "YamlErd.pdb": "sha256-\/0fXbTpfMoiW3IWxWqWVQzL1+96gzEwAWnaUKmO+wm4=",
+      "YamlErdOnWeb.pdb": "sha256-X929oD9riW3+e1d25FeNyIYfsyPMfMc3oWKJ+nWLbx0="
     },
     "runtime": {
       "dotnet.timezones.blat": "sha256-SQvzbzBfueaAxSKIKE1khBH02NH2MJJaWDBav\/S5MSs=",
